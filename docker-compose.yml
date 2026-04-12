@@ -5,24 +5,10 @@ services:
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_USER: qwerynotes
-      POSTGRES_PASSWORD: qwerynotes123
-      POSTGRES_DB: qwerynotes
+      POSTGRES_USER: lumma
+      POSTGRES_PASSWORD: lumma123
+      POSTGRES_DB: lumma
     volumes:
       - pgdata:/var/lib/postgresql/data
 volumes:
   pgdata:
-
- phpmyadmin:
-    image: phpmyadmin/phpmyadmin
-    container_name: budgetbuddy-pma
-    restart: always
-    ports:
-      - "8080:80" # Accederemos por el puerto 8080 para no chocar con Nginx
-    environment:
-      PMA_HOST: db # <--- ¡CLAVE! Dice: "Conéctate al contenedor llamado 'db'"
-      MYSQL_ROOT_PASSWORD: root # La misma pass que pusiste en el servicio db
-    depends_on:
-      - db
-    networks:
-      - budgetbuddy_net

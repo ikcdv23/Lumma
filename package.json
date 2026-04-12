@@ -1,5 +1,5 @@
 {
-  "name": "QweryNotes",
+  "name": "lumma",
   "private": true,
   "scripts": {
     "build": "turbo run build",
