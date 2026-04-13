@@ -4,6 +4,11 @@
 
 - [[plan/clean-architecture|Plan: Clean Architecture]]
 
+## Conceptos aprendidos
+
+- [[concepts/server-components|Server Components vs Client Components]]
+- [[concepts/layouts|Layouts, Route Groups y navegacion]]
+
 ## Carpetas
 
 - **plan/** — Planes y roadmap con justificaciones
