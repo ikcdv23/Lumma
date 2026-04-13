@@ -1,159 +1,83 @@
-# Turborepo starter
+# Lumma
 
-This Turborepo starter is maintained by the Turborepo core team.
+App de notas para estudiantes y productividad.
 
-## Using this example
+## Requisitos
 
-Run the following command:
+- **Node.js** >= 20.19 (usa `nvm install 20 && nvm use 20`)
+- **pnpm** 9 (`npm install --global corepack@latest && corepack enable`)
+- **Docker** (para PostgreSQL)
 
-```sh
-npx create-turbo@latest
+## Setup desde cero
+
+### 1. Clonar e instalar dependencias
+
+```bash
+git clone <url-del-repo>
+cd Lumma
+pnpm install
 ```
 
-## What's inside?
+### 2. Levantar la base de datos
 
-This Turborepo includes the following packages/apps:
-
-### Apps and Packages
-
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
-
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
-
-### Utilities
-
-This Turborepo has some additional tools already setup for you:
-
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-
-### Build
-
-To build all apps and packages, run the following command:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo build
+```bash
+docker compose up -d
 ```
 
-Without global `turbo`, use your package manager:
+Esto arranca PostgreSQL 16 en el puerto 5432 con usuario `lumma`, password `lumma123`, base de datos `lumma`.
 
-```sh
-cd my-turborepo
-npx turbo build
-pnpm dlx turbo build
-pnpm exec turbo build
+### 3. Variables de entorno
+
+Crea el archivo `apps/web/.env.local`:
+
+```env
+DATABASE_URL=postgresql://lumma:lumma123@localhost:5432/lumma
+NEXTAUTH_SECRET=cualquier-string-secreto-aqui
+NEXTAUTH_URL=http://localhost:3000
+GOOGLE_CLIENT_ID=tu-client-id-de-google
+GOOGLE_CLIENT_SECRET=tu-client-secret-de-google
 ```
 
-You can build a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+Las credenciales de Google se configuran en [Google Cloud Console](https://console.cloud.google.com/apis/credentials).
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
+### 4. Configurar Prisma
 
-```sh
-turbo build --filter=docs
+```bash
+npx prisma generate --schema apps/web/prisma/schema.prisma
+npx prisma migrate dev --schema apps/web/prisma/schema.prisma
 ```
 
-Without global `turbo`:
+El primero genera los tipos TypeScript. El segundo aplica las migraciones a la base de datos.
 
-```sh
-npx turbo build --filter=docs
-pnpm exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
+### 5. Arrancar el proyecto
+
+```bash
+pnpm dev
 ```
 
-### Develop
+Abre http://localhost:3000 — la app web corre en el puerto 3000.
 
-To develop all apps and packages, run the following command:
+## Comandos utiles
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
+| Comando | Que hace |
+|---------|----------|
+| `pnpm dev` | Arranca todos los dev servers |
+| `pnpm build` | Compila todo el monorepo |
+| `pnpm lint` | Linter (cero warnings) |
+| `pnpm check-types` | Verificar tipos TypeScript |
+| `docker compose up -d` | Levantar PostgreSQL |
+| `docker compose down` | Parar PostgreSQL |
 
-```sh
-cd my-turborepo
-turbo dev
+## Estructura del monorepo
+
+```
+apps/web    — App principal (Next.js 16, React 19)
+apps/docs   — Documentacion (Next.js)
+packages/ui — Componentes compartidos
+docs/       — Apuntes y documentacion del proyecto (Obsidian)
 ```
 
-Without global `turbo`, use your package manager:
+## Notas por SO
 
-```sh
-cd my-turborepo
-npx turbo dev
-pnpm exec turbo dev
-pnpm exec turbo dev
-```
-
-You can develop a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo dev --filter=web
-```
-
-Without global `turbo`:
-
-```sh
-npx turbo dev --filter=web
-pnpm exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
-```
-
-### Remote Caching
-
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
-
-Turborepo can use a technique known as [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo login
-```
-
-Without global `turbo`, use your package manager:
-
-```sh
-cd my-turborepo
-npx turbo login
-pnpm exec turbo login
-pnpm exec turbo login
-```
-
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
-
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo link
-```
-
-Without global `turbo`:
-
-```sh
-npx turbo link
-pnpm exec turbo link
-pnpm exec turbo link
-```
-
-## Useful Links
-
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turborepo.dev/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.dev/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.dev/docs/reference/configuration)
-- [CLI Usage](https://turborepo.dev/docs/reference/command-line-reference)
+- **Linux**: nvm viene en la terminal directamente
+- **Windows**: usa [nvm-windows](https://github.com/coreybutler/nvm-windows) para gestionar versiones de Node. Docker Desktop para los contenedores
