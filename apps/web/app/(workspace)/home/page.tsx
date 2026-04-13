@@ -5,7 +5,7 @@ import { auth } from "@/auth";
 
     return (
       <p className="text-muted-foreground">
-        Bienvenido, {session?.user?.name ?? "usuario"}
+        Bienvenido a la pagina 1, {session?.user?.name ?? "usuario"}
       </p>
     );
   }
