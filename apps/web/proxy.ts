@@ -6,18 +6,17 @@ export default auth((req) => {
 	logRequest(req);
 
 	const logueado = !!req.auth;
-	const enLogin = req.nextUrl.pathname.startsWith("/auth");
+	const enAuth = req.nextUrl.pathname === "/login" || req.nextUrl.pathname === "/register";
 
-	if (!logueado && !enLogin) {
-		return Response.redirect(new URL("/auth/login", req.nextUrl));
+	if (!logueado && !enAuth) {
+		return Response.redirect(new URL("/login", req.nextUrl));
 	}
 
-	if (logueado && enLogin) {
+	if (logueado && enAuth) {
 		return Response.redirect(new URL("/home", req.nextUrl));
 	}
 });
 
 export const config = {
-	//THIS IS ONLY FOR TESTING matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
-	matcher: []
+	matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
 };

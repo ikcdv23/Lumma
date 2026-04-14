@@ -1,8 +1,9 @@
-  import { auth, signOut } from "@/auth";                                                    
-  import { Home, LogOut, User } from "lucide-react";          
-  import Link from "next/link";                             
-  import {                                                                                   
-    Sidebar,                                                                                 
+  import { auth, signOut } from "@/auth";
+  import { Home, LogOut, User } from "lucide-react";
+  import Link from "next/link";
+  import { cookies } from "next/headers";
+  import {
+    Sidebar,
     SidebarContent,
     SidebarFooter,
     SidebarHeader,
@@ -18,10 +19,12 @@
     children,
   }: {
     children: React.ReactNode;
-  }) {  
+  }) {
     const session = await auth();
+    const cookieStore = await cookies();
+    const sidebarOpen = cookieStore.get("sidebar_state")?.value !== "false";
     return (
-      <SidebarProvider>
+      <SidebarProvider defaultOpen={sidebarOpen}>
         <Sidebar variant="inset">
           <SidebarHeader>
             <SidebarMenu>
@@ -37,15 +40,15 @@
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                    <Link href="/home/">
+                    <Link href="/home">
                         <Home />
-                        pagina 1
+                        Inicio
                     </Link>
                 </SidebarMenuButton>    
                 <SidebarMenuButton asChild>
-                    <Link href="/home2/">
+                    <Link href="/notes">
                         <Home />
-                        pagina 2
+                        Carpetas
                     </Link>
                 </SidebarMenuButton>    
               </SidebarMenuItem>
@@ -86,7 +89,7 @@
         <SidebarInset>
           <header className="flex h-14 items-center gap-2 border-b px-4">
             <SidebarTrigger />
-            <h1 className="text-sm font-medium">Inicio</h1>
+            
           </header>
           <main className="flex flex-1 items-center justify-center">
             {children}
