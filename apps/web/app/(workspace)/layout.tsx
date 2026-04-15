@@ -15,6 +15,7 @@
     SidebarTrigger,
   } from "@/components/ui/sidebar";
 
+
  export default async function WorkspaceLayout({
     children,
   }: {

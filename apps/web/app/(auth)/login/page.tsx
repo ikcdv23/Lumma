@@ -12,6 +12,9 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
+export const metadata = {
+    title: "Iniciar sesión",  
+};
 
 export default function LoginPage() {
 	return (
@@ -104,7 +107,7 @@ export default function LoginPage() {
 				<CardFooter className="justify-center">
 					<p className="text-sm text-muted-foreground">
 						No tienes cuenta?{" "}
-						<Link href="/auth/register" className="text-primary hover:underline">
+						<Link href="/register" className="text-primary hover:underline">
 							Registrate
 						</Link>
 					</p>

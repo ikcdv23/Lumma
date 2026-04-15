@@ -4,6 +4,10 @@ import { FolderCard } from "@/components/folders/folder-card";
 import { indexFolders } from "@/server/actions/folder-actions";
 import { CreateFolderModal } from "@/components/folders/create-folder-modal";
 
+export const metadata = {
+    title: "Carpetas",  // → se muestra "Lumma - Carpetas"
+};
+
 export default async function NotesPage() {
 	const session = await auth(); // NOTA: Pendiente a revisar si se usa o no
 	const folders = (await indexFolders()) ?? [];
