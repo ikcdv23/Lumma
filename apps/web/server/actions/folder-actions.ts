@@ -28,17 +28,22 @@ export async function deleteFolder(idFolder: string) {
 			userId: session.user!.id,
 		},
 	});
+
+	revalidatePath("/notes");
 }
 
-export async function updateFolders(idFolder: string, name?: string) {
+export async function updateFolder(idFolder: string, name?: string) {
 	const session = await auth();
 	if (!session?.user?.id) return;
+
+	if (!name || name.trim() === "") return;
 
 	const folder = await prisma.folder.update({
 		where: { id: idFolder, userId: session.user!.id },
 		data: { name: name },
 	});
 
+	revalidatePath("/ folders");
 	return folder;
 }
 

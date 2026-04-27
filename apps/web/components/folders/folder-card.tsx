@@ -1,17 +1,27 @@
-// components/folders/folder-card.tsx
+"use client";
+
 import {
 	ContextMenu,
 	ContextMenuContent,
 	ContextMenuItem,
 	ContextMenuTrigger,
 } from "@/components/ui/context-menu";
+import { deleteFolder, updateFolder } from "@/server/actions/folder-actions";
+
 
 type FolderCardProps = {
+	idFolder: string;
 	name: string;
 	noteCount: number;
+	onEdit: () => void;
 };
 
-export function FolderCard({ name, noteCount }: FolderCardProps) {
+export function FolderCard({
+	idFolder,
+	name,
+	noteCount,
+	onEdit,
+}: FolderCardProps) {
 	return (
 		<ContextMenu>
 			<ContextMenuTrigger>
@@ -25,8 +35,15 @@ export function FolderCard({ name, noteCount }: FolderCardProps) {
 				</div>
 			</ContextMenuTrigger>
 			<ContextMenuContent>
-				<ContextMenuItem>Renombrar</ContextMenuItem>
-				<ContextMenuItem className="text-destructive">Eliminar</ContextMenuItem>
+				<ContextMenuItem onClick={onEdit}>Renombrar</ContextMenuItem>
+				<ContextMenuItem
+					className="text-destructive"
+					onClick={async () => {
+						await deleteFolder(idFolder);
+					}}
+				>
+					Eliminar
+				</ContextMenuItem>
 			</ContextMenuContent>
 		</ContextMenu>
 	);

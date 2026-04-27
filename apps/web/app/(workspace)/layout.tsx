@@ -47,7 +47,7 @@
                     </Link>
                 </SidebarMenuButton>    
                 <SidebarMenuButton asChild>
-                    <Link href="/notes">
+                    <Link href="/folders">
                         <Home />
                         Carpetas
                     </Link>
