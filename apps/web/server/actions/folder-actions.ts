@@ -15,7 +15,7 @@ export async function createFolder(name: string) {
 		},
 	});
 
-	revalidatePath("/notes");
+	revalidatePath("/folders");
 	return folder;
 }
 export async function deleteFolder(idFolder: string) {
@@ -29,7 +29,7 @@ export async function deleteFolder(idFolder: string) {
 		},
 	});
 
-	revalidatePath("/notes");
+	revalidatePath("/folders");
 }
 
 export async function updateFolder(idFolder: string, name?: string) {
@@ -43,7 +43,7 @@ export async function updateFolder(idFolder: string, name?: string) {
 		data: { name: name },
 	});
 
-	revalidatePath("/ folders");
+	revalidatePath("/folders");
 	return folder;
 }
 
@@ -74,13 +74,4 @@ export async function getFolder(folderId: string) {
             notes: true,
         },
     });
-}
-
-export default async function FolderPage({
-	params,
-}: {
-	params: Promise<{ folderId: string }>;
-}) {
-	const { folderId } = await params;
-	
 }

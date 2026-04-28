@@ -1,5 +1,9 @@
 # Lumma - Base de Conocimiento
 
+## ⚡ Empezar aqui si retomas el proyecto
+
+- [[handoff|Handoff de la ultima sesion]] — estado actual, decisiones, TODOs
+
 ## Mapa del proyecto
 
 - [[plan/clean-architecture|Plan: Clean Architecture]]
