@@ -60,3 +60,27 @@ export async function indexFolders() {
 		},
 	});
 }
+
+export async function getFolder(folderId: string) {
+    const session = await auth();
+    if (!session?.user?.id) return null;
+
+    return await prisma.folder.findUnique({
+        where: {
+            id: folderId,
+            userId: session.user.id,  // importante: verifica que sea SU carpeta
+        },
+        include: {
+            notes: true,
+        },
+    });
+}
+
+export default async function FolderPage({
+	params,
+}: {
+	params: Promise<{ folderId: string }>;
+}) {
+	const { folderId } = await params;
+	
+}

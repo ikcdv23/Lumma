@@ -1,16 +1,15 @@
-// app/(workspace)/folders/page.tsx
 import { indexFolders } from "@/server/actions/folder-actions";
 import { FoldersGrid } from "@/components/folders/folder-grid";
+
+export const metadata = {
+    title: "Carpetas",
+};
 
 export default async function FoldersPage() {
     const folders = (await indexFolders()) ?? [];
 
     return (
-        <div className="flex flex-col gap-6 p-6 w-full max-w-5xl mx-auto">
-            <div>
-                <h1 className="text-2xl font-bold">Mis carpetas</h1>
-                <p className="text-sm text-muted-foreground">{folders.length} carpetas</p>
-            </div>
+        <div className="flex flex-col gap-8 p-6 md:p-8 w-full max-w-6xl mx-auto">
             <FoldersGrid folders={folders} />
         </div>
     );
