@@ -1,8 +1,7 @@
 import { signIn } from "@/auth";
+import { RegisterForm } from "@/components/auth/register-form";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import {
 	Card,
@@ -14,7 +13,7 @@ import {
 } from "@/components/ui/card";
 
 export const metadata = {
-    title: "Registrarse",
+	title: "Registrarse",
 };
 
 export default function RegisterPage() {
@@ -74,44 +73,7 @@ export default function RegisterPage() {
 						</span>
 					</div>
 
-					{/* Formulario de registro — de pega por ahora */}
-					<form className="space-y-4">
-						<div className="space-y-2">
-							<Label htmlFor="name">Nombre</Label>
-							<Input
-								id="name"
-								type="text"
-								placeholder="Tu nombre"
-								disabled
-							/>
-						</div>
-						<div className="space-y-2">
-							<Label htmlFor="email">Email</Label>
-							<Input
-								id="email"
-								type="email"
-								placeholder="tu@email.com"
-								disabled
-							/>
-						</div>
-						<div className="space-y-2">
-							<Label htmlFor="password">Contrasena</Label>
-							<Input
-								id="password"
-								type="password"
-								placeholder="********"
-								disabled
-							/>
-						</div>
-						<Button
-							type="submit"
-							size="lg"
-							className="w-full"
-							disabled
-						>
-							Crear cuenta
-						</Button>
-					</form>
+					<RegisterForm />
 				</CardContent>
 
 				<CardFooter className="justify-center">

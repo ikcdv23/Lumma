@@ -1,5 +1,6 @@
 import { signIn } from "@/auth";
 import Link from "next/link";
+import { LoginForm } from "@/components/auth/login-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,8 +13,10 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
+
+
 export const metadata = {
-    title: "Iniciar sesión",  
+	title: "Iniciar sesión",
 };
 
 export default function LoginPage() {
@@ -73,35 +76,7 @@ export default function LoginPage() {
 						</span>
 					</div>
 
-					{/* Formulario de email — de pega por ahora */}
-					<form className="space-y-4">
-						<div className="space-y-2">
-							<Label htmlFor="email">Email</Label>
-							<Input
-								id="email"
-								type="email"
-								placeholder="tu@email.com"
-								disabled
-							/>
-						</div>
-						<div className="space-y-2">
-							<Label htmlFor="password">Contrasena</Label>
-							<Input
-								id="password"
-								type="password"
-								placeholder="********"
-								disabled
-							/>
-						</div>
-						<Button
-							type="submit"
-							size="lg"
-							className="w-full"
-							disabled
-						>
-							Iniciar sesion
-						</Button>
-					</form>
+					<LoginForm />
 				</CardContent>
 
 				<CardFooter className="justify-center">

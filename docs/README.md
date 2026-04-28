@@ -3,11 +3,13 @@
 ## Mapa del proyecto
 
 - [[plan/clean-architecture|Plan: Clean Architecture]]
+- [[plan/auth-with-password|Plan: Auth con contraseña + verificacion por email]]
 
 ## Conceptos aprendidos
 
 - [[concepts/server-components|Server Components vs Client Components]]
 - [[concepts/layouts|Layouts, Route Groups y navegacion]]
+- [[concepts/security-account-enumeration|Seguridad: account enumeration]]
 
 ## Carpetas
 
