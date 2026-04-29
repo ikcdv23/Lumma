@@ -2,7 +2,7 @@ import Link from "next/link";
 import { FileText, Folder, Inbox, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { mockFolders, mockRecentNotes, mockUserName } from "../mock-data";
+import { mockFolders, mockRecentNotes, mockUserName } from "../../home/mock-data";
 
 export const metadata = {
     title: "Mockup V3 - Quick capture",

@@ -12,7 +12,7 @@ import {
     Save,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { mockFolders, mockRecentNotes, mockUserName } from "../mock-data";
+import { mockFolders, mockRecentNotes, mockUserName } from "../../home/mock-data";
 
 export default function MockupV4() {
     const [isExpanded, setIsExpanded] = useState(false);
