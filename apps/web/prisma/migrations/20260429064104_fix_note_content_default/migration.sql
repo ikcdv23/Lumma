@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Note" ALTER COLUMN "title" DROP DEFAULT,
+ALTER COLUMN "content" SET DEFAULT '{}';

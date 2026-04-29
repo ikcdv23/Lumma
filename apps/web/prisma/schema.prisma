@@ -78,7 +78,7 @@ model Folder {
 model Note {
   id        String   @id @default(uuid())
   title     String   
-  content   Json     @default("")
+  content   Json     @default("{}")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   folder    Folder?  @relation(fields: [folderId], references: [id], onDelete: Cascade)
