@@ -1,5 +1,3 @@
-"use client";
-
 import { useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
@@ -12,12 +10,9 @@ import {
     Save,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { mockFolders, mockRecentNotes, mockUserName } from "../mock-data";
+import { mockFolders, mockRecentNotes, mockUserName } from "./mock-data";
 import { auth } from "@/auth";
 
-export const metadata = {
-    title: "Inicio", 
-};
 
 export default function MockupV4() {
     const [isExpanded, setIsExpanded] = useState(false);
