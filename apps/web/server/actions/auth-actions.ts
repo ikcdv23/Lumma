@@ -6,7 +6,7 @@ import bcrypt from "bcrypt"
 import { redirect } from "next/navigation"
 import { signIn } from "@/auth";
 
-export async function manualSignin(formData: FormData) {
+export async function manualSignin(prevState: unknown, formData: FormData) {
     const rawInput = {
         name: formData.get("name") as string,
         email: formData.get("email") as string,

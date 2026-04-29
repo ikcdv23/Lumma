@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useActionState } from "react";
 import { manualSignin } from "@/server/actions/auth-actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,7 @@ export function RegisterForm() {
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const [confirmPassword, setConfirmPassword] = useState("");
+	const [state, formAction] = useActionState(manualSignin, null);
 
 	const allFilled =
 		name.trim() !== "" &&
@@ -19,7 +20,7 @@ export function RegisterForm() {
 		confirmPassword.trim() !== "";
 
 	return (
-		<form className="space-y-4" action={manualSignin}>
+		<form className="space-y-4" action={formAction}>
 			<div className="space-y-2">
 				<Label htmlFor="name">Nombre</Label>
 				<Input
@@ -64,6 +65,9 @@ export function RegisterForm() {
 					onChange={(e) => setConfirmPassword(e.target.value)}
 				/>
 			</div>
+			{state?.error && (
+				<p className="text-sm text-destructive">{state.error}</p>
+			)}
 			<Button
 				type="submit"
 				size="lg"
