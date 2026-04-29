@@ -65,3 +65,55 @@ export async function deleteNote(noteId: string) {
 
 	revalidatePath(`/folders/${note.folderId}`);
 }
+
+export async function getRecentNotes(limit: number = 4) {
+	const session = await auth();
+	if (!session?.user?.id) return [];
+
+	return await prisma.note.findMany({
+		where: { userId: session.user.id },
+		orderBy: { updatedAt: "desc" },
+		take: limit,
+		include: {
+			folder: {
+				select: { name: true },
+			},
+		},
+	});
+}
+
+export async function getInboxCount() {
+	const session = await auth();
+	if (!session?.user?.id) return 0;
+
+	return await prisma.note.count({
+		where: {
+			userId: session.user.id,
+			folderId: null,
+		},
+	});
+}
+
+export async function createQuickNote() {
+	const session = await auth();
+	if (!session?.user?.id) return null;
+
+	const count = await prisma.note.count({
+		where: {
+			userId: session.user.id,
+			title: { startsWith: "Nota rápida " },
+		},
+	});
+
+	const note = await prisma.note.create({
+		data: {
+			title: `Nota rápida ${count + 1}`,
+			content: {},
+			folderId: null,
+			userId: session.user.id,
+		},
+	});
+
+	revalidatePath("/home");
+	return note;
+}

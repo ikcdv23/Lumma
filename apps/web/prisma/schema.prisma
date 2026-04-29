@@ -81,7 +81,7 @@ model Note {
   content   Json     @default("{}")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  folder    Folder?  @relation(fields: [folderId], references: [id], onDelete: Cascade)
+  folder    Folder?  @relation(fields: [folderId], references: [id], onDelete: SetNull)
   folderId  String?
   user      User     @relation(fields: [userId], references: [id])
   userId    String

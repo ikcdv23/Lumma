@@ -36,7 +36,7 @@ export function HomeClient({ userName }: HomeClientProps) {
                         Hola, {userName}
                     </h1>
                     <p className="text-sm text-muted-foreground">
-                        Que tienes en mente?
+                        ¿Que tienes en mente?
                     </p>
                 </div>
 

@@ -2,6 +2,7 @@
 
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { count } from "console";
 import { revalidatePath } from "next/cache";
 
 export async function createFolder(name: string) {
@@ -62,16 +63,28 @@ export async function indexFolders() {
 }
 
 export async function getFolder(folderId: string) {
-    const session = await auth();
-    if (!session?.user?.id) return null;
+	const session = await auth();
+	if (!session?.user?.id) return null;
 
-    return await prisma.folder.findUnique({
-        where: {
-            id: folderId,
-            userId: session.user.id,  // importante: verifica que sea SU carpeta
-        },
-        include: {
-            notes: true,
-        },
-    });
+	return await prisma.folder.findUnique({
+		where: {
+			id: folderId,
+			userId: session.user.id, // importante: verifica que sea SU carpeta
+		},
+		include: {
+			notes: true,
+		},
+	});
+}
+
+export async function noteCount(folderId: string) {
+	const session = await auth();
+	if (!session?.user?.id) return;
+
+	return await prisma.note.count({
+		where: {
+			userId: session.user.id,
+			folderId: folderId,
+		},
+	});
 }
