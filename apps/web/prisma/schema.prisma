@@ -17,7 +17,7 @@ model User {
   name          String?
   email         String    @unique
   emailVerified DateTime?
-  password      String?   
+  password      String?
   image         String?
   accounts      Account[]
   sessions      Session[]
@@ -76,15 +76,18 @@ model Folder {
 }
 
 model Note {
-  id        String   @id @default(uuid())
-  title     String   
-  content   Json     @default("{}")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  folder    Folder?  @relation(fields: [folderId], references: [id], onDelete: SetNull)
-  folderId  String?
-  user      User     @relation(fields: [userId], references: [id])
-  userId    String
+  id                  String   @id @default(uuid())
+  title               String
+  content             Json     @default("{}")
+  isQuickNote         Boolean  @default(false)
+  autoDeleteAfterDays Int?
+  //  NoteType { REGULAR | QUICK | DRAFT } por si en el futuro existen más tipos
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  folder              Folder?  @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  folderId            String?
+  user                User     @relation(fields: [userId], references: [id])
+  userId              String
 }
 
 /**

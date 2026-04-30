@@ -1,5 +1,5 @@
   import { auth, signOut } from "@/auth";
-  import { Folder, Home, LogOut, User } from "lucide-react";
+  import { Folder, Home, Inbox, LogOut, User } from "lucide-react";
   import Link from "next/link";
   import { cookies } from "next/headers";
   import {
@@ -45,13 +45,19 @@
                         <Home />
                         Inicio
                     </Link>
-                </SidebarMenuButton>    
+                </SidebarMenuButton>
+                <SidebarMenuButton asChild>
+                    <Link href="/inbox">
+                        <Inbox className="size-5" />
+                        Inbox
+                    </Link>
+                </SidebarMenuButton>
                 <SidebarMenuButton asChild>
                     <Link href="/folders">
                         <Folder className="size-5" />
                         Carpetas
                     </Link>
-                </SidebarMenuButton>    
+                </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarContent>

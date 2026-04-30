@@ -89,8 +89,21 @@ export async function getInboxCount() {
 	return await prisma.note.count({
 		where: {
 			userId: session.user.id,
-			folderId: null,
+			isQuickNote: true,
 		},
+	});
+}
+
+export async function getInboxNotes() {
+	const session = await auth();
+	if (!session?.user?.id) return [];
+
+	return await prisma.note.findMany({
+		where: {
+			userId: session.user.id,
+			isQuickNote: true,
+		},
+		orderBy: { updatedAt: "desc" },
 	});
 }
 
@@ -98,7 +111,7 @@ export async function createQuickNote() {
 	const session = await auth();
 	if (!session?.user?.id) return null;
 
-	const count = await prisma.note.count({
+	const count = await prisma.note.count({ 
 		where: {
 			userId: session.user.id,
 			title: { startsWith: "Nota rápida " },
@@ -111,6 +124,7 @@ export async function createQuickNote() {
 			content: {},
 			folderId: null,
 			userId: session.user.id,
+			isQuickNote: true
 		},
 	});
 
