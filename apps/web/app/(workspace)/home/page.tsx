@@ -19,7 +19,7 @@ export default async function HomePage() {
 	const recentNotes = await getRecentNotes(10);
 
 	return (
-		<div className="flex flex-col gap-10 p-6 md:p-12 w-full max-w-4xl mx-auto">
+		<div className="flex flex-col gap-10 p-6 md:p-12 w-full max-w-4xl mx-auto mt-30">
 			<FastNotes userName={userName} />
 
 			<section>
@@ -46,7 +46,7 @@ export default async function HomePage() {
 				</div>
 			</section>
 			<section className="flex flex-col gap-3">
-				<h2 className="text-sm font-medium text-muted-foreground">Recientes</h2>
+				<h2 className="text-sm font-medium text-muted-foreground">Notas recientes</h2>
 				<div className="flex flex-col">
 					{/* Cabecera de columnas */}
 					<div className="flex items-center gap-3 border-b px-3 pb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">

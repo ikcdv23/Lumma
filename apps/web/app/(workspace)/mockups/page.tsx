@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { LayoutGrid, List, Sparkles, Zap } from "lucide-react";
+import { FileText, LayoutGrid, List, Pencil, Sparkles, Zap } from "lucide-react";
 
 export const metadata = {
     title: "Mockups",
@@ -33,6 +33,20 @@ const variants = [
         title: "V4 — V3 + animacion expand-to-fullscreen",
         description:
             "Igual que V3 pero la tarjeta de Nota rapida se expande a pantalla completa al click, convirtiendose en el editor. Animacion con motion (Framer Motion) usando layoutId.",
+    },
+    {
+        href: "/mockups/note-a",
+        icon: FileText,
+        title: "Note A — Notion-like (breadcrumb + chrome)",
+        description:
+            "Detalle de nota estilo Notion. Breadcrumb arriba (Inbox > título), SaveIndicator + acciones (Mover, menú), título grande y editor body centrado max-w-3xl.",
+    },
+    {
+        href: "/mockups/note-c",
+        icon: Pencil,
+        title: "Note C — Híbrido minimalista",
+        description:
+            "Detalle de nota minimalista. Header limpio con flecha 'Volver', SaveIndicator, pill de carpeta cliqueable y menú. Body centrado, sin border-bottom en header, foco en escritura.",
     },
 ];
 

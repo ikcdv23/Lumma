@@ -23,7 +23,7 @@ export default async function FolderPage({
     }
 
     return (
-        <div className="flex flex-col gap-6 p-6 md:p-8 w-full max-w-6xl mx-auto">
+        <div className="flex flex-col gap-6 p-6 md:p-8 w-full max-w-6xl mx-auto ">
             <Breadcrumb>
                 <BreadcrumbList>
                     <BreadcrumbItem>

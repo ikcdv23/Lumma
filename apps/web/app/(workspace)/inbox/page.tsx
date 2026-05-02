@@ -11,7 +11,7 @@ export default async function InboxPage() {
     const isEmpty = notes.length === 0;
 
     return (
-        <div className="flex flex-col gap-6 p-6 md:p-8 w-full max-w-4xl mx-auto">
+        <div className="flex flex-col gap-6 p-6 md:p-8 w-full max-w-4xl mx-auto mt-30">
             <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-2">
                     <Inbox className="size-7 text-primary" />
@@ -41,7 +41,7 @@ export default async function InboxPage() {
                     {notes.map((note) => (
                         <Link
                             key={note.id}
-                            href={`/inbox/${note.id}`}
+                            href={`/notes/${note.id}`}
                             className="group flex items-center gap-3 rounded-lg border bg-card px-4 py-3 transition-all hover:border-primary/40 hover:shadow-sm"
                         >
                             <FileText className="size-4 text-muted-foreground shrink-0" />

@@ -3,6 +3,9 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+
+import type { Prisma } from "@/generated/prisma/client";
 
 export async function createNote(
 	folderId: string | null,
@@ -39,7 +42,7 @@ export async function getNote(noteId: string) {
 
 export async function updateNote(
 	noteId: string,
-	data: { title?: string; content?: string },
+	data: { title?: string; content?: Prisma.InputJsonValue },
 ) {
 	const session = await auth();
 	if (!session?.user?.id) return null;
@@ -109,4 +112,21 @@ export async function getInboxNotes() {
 		},
 		orderBy: { updatedAt: "desc" },
 	});
+}
+
+export async function createNoteAndRedirect(folderId: string | null) {
+	const session = await auth();
+	if (!session?.user?.id) return;
+
+	const note = await prisma.note.create({
+		data: {
+			title: "",
+			content: {},
+			folderId,
+			userId: session.user.id,
+		},
+	});
+
+	revalidatePath(folderId ? `/folders/${folderId}` : "/home");
+	redirect(`/notes/${note.id}`);
 }

@@ -34,7 +34,7 @@ export function NoteCard({
 		<ContextMenu>
 			<ContextMenuTrigger>
 				<Link
-					href={`/folders/${folderId}/${idNote}`}
+					href={`/notes/${idNote}`}
 					className="group relative flex flex-col gap-3 rounded-xl border bg-card p-5 transition-all duration-200 hover:border-primary/40 hover:shadow-md hover:-translate-y-0.5 cursor-pointer"
 				>
 					<div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors group-hover:bg-primary/15">
