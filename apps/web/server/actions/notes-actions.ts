@@ -42,7 +42,7 @@ export async function getNote(noteId: string) {
 
 export async function updateNote(
 	noteId: string,
-	data: { title?: string; content?: Prisma.InputJsonValue },
+	data: { title?: string; content?: unknown },
 ) {
 	const session = await auth();
 	if (!session?.user?.id) return null;
@@ -52,7 +52,7 @@ export async function updateNote(
 			id: noteId,
 			userId: session.user.id,
 		},
-		data,
+		data: data as Prisma.NoteUpdateInput,
 	});
 
 	revalidatePath(note.folderId ? `/folders/${note.folderId}` : "/home");
