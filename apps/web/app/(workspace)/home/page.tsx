@@ -1,10 +1,11 @@
 import Link from "next/link";
+import FastNotes from "@/components/notes/fast-note-card";
 import { Inbox } from "lucide-react";
 import { auth } from "@/auth";
 import { FolderPill } from "@/components/folders/folder-pill";
-import FastNotes from "@/components/notes/fast-note-card";
 import { indexFolders } from "@/server/actions/folder-actions";
-import { getInboxCount } from "@/server/actions/notes-actions";
+import { getInboxCount, getRecentNotes } from "@/server/actions/notes-actions";
+import { NoteListItem } from "@/components/notes/note-list-item";
 
 export const metadata = {
 	title: "Inicio",
@@ -15,12 +16,13 @@ export default async function HomePage() {
 	const userName = session?.user?.name ?? "tu";
 	const folders = (await indexFolders()) ?? [];
 	const inboxCount = await getInboxCount();
+	const recentNotes = await getRecentNotes(10);
 
 	return (
 		<div className="flex flex-col gap-10 p-6 md:p-12 w-full max-w-4xl mx-auto">
 			<FastNotes userName={userName} />
 
-			<div>
+			<section>
 				<h2 className="text-sm font-medium text-muted-foreground">
 					Tus carpetas
 				</h2>
@@ -31,9 +33,7 @@ export default async function HomePage() {
 					>
 						<Inbox className="size-4 text-primary" />
 						<span className="font-medium">Inbox</span>
-						<span className="text-xs text-muted-foreground">
-							{inboxCount}
-						</span>
+						<span className="text-xs text-muted-foreground">{inboxCount}</span>
 					</Link>
 					{folders.map((folder) => (
 						<FolderPill
@@ -44,7 +44,39 @@ export default async function HomePage() {
 						/>
 					))}
 				</div>
-			</div>
+			</section>
+			<section className="flex flex-col gap-3">
+				<h2 className="text-sm font-medium text-muted-foreground">Recientes</h2>
+				<div className="flex flex-col">
+					{/* Cabecera de columnas */}
+					<div className="flex items-center gap-3 border-b px-3 pb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+						<div className="size-4 shrink-0" />
+						<span className="flex-1">Título</span>
+						<span className="w-28 shrink-0 text-right">Carpeta</span>
+						<span className="w-28 shrink-0 text-right">Actividad</span>
+					</div>
+
+					{/* Lista de notas (o empty state) */}
+					{recentNotes.length === 0 ? (
+						<p className="px-3 py-6 text-center text-sm text-muted-foreground">
+							Aún no tienes notas. Crea una rápida arriba para empezar.
+						</p>
+					) : (
+						<ul className="flex flex-col">
+							{recentNotes.map((recentNote) => (
+								<li key={recentNote.id}>
+									<NoteListItem
+										id={recentNote.id}
+										title={recentNote.title}
+										folderName={recentNote.folder?.name ?? null}
+										updatedAt={recentNote.updatedAt}
+									/>
+								</li>
+							))}
+						</ul>
+					)}
+				</div>
+			</section>
 		</div>
 	);
 }

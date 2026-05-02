@@ -19,3 +19,4 @@ export function FolderPill({ idFolder, name, noteCount }: FolderPillProps) {
 		</Link>
 	);
 }
+

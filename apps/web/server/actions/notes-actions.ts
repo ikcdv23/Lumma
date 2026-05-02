@@ -4,20 +4,24 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 
-export async function createNote(folderId: string, title: string) {
+export async function createNote(
+	folderId: string | null,
+	title: string,
+	content: string = "",
+) {
 	const session = await auth();
 	if (!session?.user?.id) return null;
 
 	const note = await prisma.note.create({
 		data: {
 			title,
-			content: {},
+			content,
 			folderId,
 			userId: session.user.id,
 		},
 	});
 
-	revalidatePath(`/folders/${folderId}`);
+	revalidatePath(folderId ? `/folders/${folderId}` : "/home");
 	return note;
 }
 
@@ -35,7 +39,7 @@ export async function getNote(noteId: string) {
 
 export async function updateNote(
 	noteId: string,
-	data: { title?: string; content?: object }
+	data: { title?: string; content?: string },
 ) {
 	const session = await auth();
 	if (!session?.user?.id) return null;
@@ -48,7 +52,7 @@ export async function updateNote(
 		data,
 	});
 
-	revalidatePath(`/folders/${note.folderId}`);
+	revalidatePath(note.folderId ? `/folders/${note.folderId}` : "/home");
 	return note;
 }
 
@@ -63,10 +67,10 @@ export async function deleteNote(noteId: string) {
 		},
 	});
 
-	revalidatePath(`/folders/${note.folderId}`);
+	revalidatePath(note.folderId ? `/folders/${note.folderId}` : "/home");
 }
 
-export async function getRecentNotes(limit: number = 4) {
+export async function getRecentNotes(limit: number = 10) {
 	const session = await auth();
 	if (!session?.user?.id) return [];
 
@@ -89,7 +93,7 @@ export async function getInboxCount() {
 	return await prisma.note.count({
 		where: {
 			userId: session.user.id,
-			isQuickNote: true,
+			folderId: null,
 		},
 	});
 }
@@ -101,33 +105,8 @@ export async function getInboxNotes() {
 	return await prisma.note.findMany({
 		where: {
 			userId: session.user.id,
-			isQuickNote: true,
+			folderId: null,
 		},
 		orderBy: { updatedAt: "desc" },
 	});
-}
-
-export async function createQuickNote() {
-	const session = await auth();
-	if (!session?.user?.id) return null;
-
-	const count = await prisma.note.count({ 
-		where: {
-			userId: session.user.id,
-			title: { startsWith: "Nota rápida " },
-		},
-	});
-
-	const note = await prisma.note.create({
-		data: {
-			title: `Nota rápida ${count + 1}`,
-			content: {},
-			folderId: null,
-			userId: session.user.id,
-			isQuickNote: true
-		},
-	});
-
-	revalidatePath("/home");
-	return note;
 }

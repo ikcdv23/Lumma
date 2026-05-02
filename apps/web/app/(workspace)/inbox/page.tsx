@@ -46,7 +46,7 @@ export default async function InboxPage() {
                         >
                             <FileText className="size-4 text-muted-foreground shrink-0" />
                             <span className="flex-1 text-sm font-medium truncate">
-                                {note.title || "Sin titulo"}
+                                {note.title}
                             </span>
                             <span className="text-xs text-muted-foreground shrink-0">
                                 {new Intl.DateTimeFormat("es-ES", {

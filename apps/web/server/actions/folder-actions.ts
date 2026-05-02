@@ -2,7 +2,6 @@
 
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { count } from "console";
 import { revalidatePath } from "next/cache";
 
 export async function createFolder(name: string) {
@@ -53,7 +52,7 @@ export async function indexFolders() {
 	if (!session?.user?.id) return;
 
 	return await prisma.folder.findMany({
-		where: { userId: session?.user?.id },
+		where: { userId: session.user.id },
 		include: {
 			_count: {
 				select: { notes: true },
