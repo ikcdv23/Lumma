@@ -8,12 +8,14 @@ import { Button } from "@/components/ui/button";
 import { SaveIndicator } from "@/components/ui/save-indicator";
 import { NoteEditor } from "@/components/notes/blocknote";
 import { updateNote } from "@/server/actions/notes-actions";
+import { formatRelative } from "@/lib/format-date";
 
 type Note = {
 	id: string;
 	title: string;
 	content: unknown;
 	folderId: string | null;
+	createdAt: Date;
 };
 
 // Convierte el content de la BD al formato que BlockNote acepta
@@ -97,7 +99,6 @@ export function NoteDetailClient({ note }: { note: Note }) {
 			{/* Body con scroll independiente */}
 			<div className="flex-1 overflow-auto">
 				<div className="mx-auto w-full max-w-3xl px-6 py-10 md:px-10 md:py-16">
-					{/* Título */}
 					<input
 						type="text"
 						value={title}
@@ -105,8 +106,17 @@ export function NoteDetailClient({ note }: { note: Note }) {
 						placeholder="Sin título"
 						className="w-full bg-transparent text-4xl font-bold tracking-tight outline-none placeholder:text-muted-foreground/30 md:text-5xl"
 					/>
+					<div>
+						<div className="mt-2 flex items-center gap-3 text-xs text-muted-foreground">
+							<time
+								className="mt-2 block text-xs text-muted-foreground"
+								dateTime={note.createdAt.toISOString()}
+							>
+								Creado {formatRelative(note.createdAt)}
+							</time>
+						</div>
+					</div>
 
-					{/* Editor */}
 					<div className="mt-10 -ml-12 md:-ml-14">
 						<NoteEditor
 							initial={toInitialBlocks(note.content)}

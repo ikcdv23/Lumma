@@ -39,6 +39,7 @@ export default async function WorkspaceLayout({
 
 				<SidebarContent>
 					<SidebarMenu>
+
 						<SidebarMenuItem>
 							<SidebarMenuButton asChild>
 								<Link href="/home">
@@ -46,12 +47,18 @@ export default async function WorkspaceLayout({
 									Inicio
 								</Link>
 							</SidebarMenuButton>
+						</SidebarMenuItem>
+
+						<SidebarMenuItem>
 							<SidebarMenuButton asChild>
 								<Link href="/inbox">
 									<Inbox className="size-5" />
 									Inbox
 								</Link>
 							</SidebarMenuButton>
+						</SidebarMenuItem>
+
+						<SidebarMenuItem>
 							<SidebarMenuButton asChild>
 								<Link href="/folders">
 									<Folder className="size-5" />
@@ -59,6 +66,7 @@ export default async function WorkspaceLayout({
 								</Link>
 							</SidebarMenuButton>
 						</SidebarMenuItem>
+						
 					</SidebarMenu>
 				</SidebarContent>
 
