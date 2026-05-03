@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { NotepadText } from "lucide-react";
+import { formatRelative } from "@/lib/format-date";
 
 type NoteListItemProps = {
 	id: string;
@@ -7,28 +8,6 @@ type NoteListItemProps = {
 	folderName: string | null;
 	updatedAt: Date;
 };
-
-// Devuelve "ahora", "hace 5 min", "hace 3h", "ayer", "hace 5 días", etc.
-function formatRelative(date: Date): string {
-	const diffMs = Date.now() - new Date(date).getTime();
-	const diffMin = Math.floor(diffMs / 60_000);
-
-	if (diffMin < 1) return "ahora";
-	if (diffMin < 60) return `hace ${diffMin} min`;
-
-	const diffH = Math.floor(diffMin / 60);
-	if (diffH < 24) return `hace ${diffH}h`;
-
-	const diffD = Math.floor(diffH / 24);
-	if (diffD === 1) return "ayer";
-	if (diffD < 30) return `hace ${diffD} días`;
-
-	const diffMo = Math.floor(diffD / 30);
-	if (diffMo < 12) return `hace ${diffMo} ${diffMo === 1 ? "mes" : "meses"}`;
-
-	const diffY = Math.floor(diffMo / 12);
-	return `hace ${diffY} ${diffY === 1 ? "año" : "años"}`;
-}
 
 export function NoteListItem({
 	id,

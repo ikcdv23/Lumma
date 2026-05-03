@@ -8,11 +8,14 @@ import {
 	ContextMenuItem,
 	ContextMenuTrigger,
 } from "@/components/ui/context-menu";
+import { formatRelative } from "@/lib/format-date";
+import { extractPreview } from "@/lib/note-content";
 
 type NoteCardProps = {
 	idNote: string;
 	folderId: string;
 	title: string;
+	content: unknown;
 	updatedAt: Date;
 	onEdit: () => void;
 };
@@ -21,31 +24,54 @@ export function NoteCard({
 	idNote,
 	folderId,
 	title,
+	content,
 	updatedAt,
 	onEdit,
 }: NoteCardProps) {
-	const formattedDate = new Intl.DateTimeFormat("es-ES", {
-		day: "numeric",
-		month: "short",
-		year: "numeric",
-	}).format(updatedAt);
+	const preview = extractPreview(content, 180);
 
 	return (
 		<ContextMenu>
 			<ContextMenuTrigger>
 				<Link
 					href={`/notes/${idNote}`}
-					className="group relative flex flex-col gap-3 rounded-xl border bg-card p-5 transition-all duration-200 hover:border-primary/40 hover:shadow-md hover:-translate-y-0.5 cursor-pointer"
+					className="group relative flex flex-col gap-4 overflow-hidden rounded-xl border bg-card p-5 transition-all duration-300 ease-out hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-1 cursor-pointer"
 				>
-					<div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors group-hover:bg-primary/15">
-						<FileText className="size-5" />
+					{/* Línea gradient decorativa que aparece on hover */}
+					<div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-primary/50 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+
+					{/* Icon bubble */}
+					<div className="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary transition-all duration-300 group-hover:bg-primary/15 group-hover:scale-105">
+						<FileText className="size-4.5" />
 					</div>
-					<div className="flex flex-col gap-1 min-w-0">
-						<h3 className="font-medium text-base truncate" title={title}>
-							{title || "Sin titulo"}
-						</h3>
-						<span className="text-xs text-muted-foreground">
-							Editado el {formattedDate}
+
+					{/* Cuerpo: título + preview + fecha */}
+					<div className="flex flex-col gap-2 min-w-0 flex-1">
+						{title ? (
+							<h3
+								className="font-semibold text-base leading-snug line-clamp-2 transition-colors duration-200 group-hover:text-primary"
+								title={title}
+							>
+								{title}
+							</h3>
+						) : preview ? (
+							<h3 className="font-semibold text-base leading-snug line-clamp-2 text-foreground/70 transition-colors duration-200 group-hover:text-primary">
+								{preview}
+							</h3>
+						) : (
+							<h3 className="font-normal italic text-base leading-snug text-muted-foreground/60">
+								Vacía
+							</h3>
+						)}
+
+						{title && preview && (
+							<p className="text-sm text-muted-foreground line-clamp-3 leading-relaxed">
+								{preview}
+							</p>
+						)}
+
+						<span className="mt-auto text-xs text-muted-foreground tabular-nums pt-1">
+							{formatRelative(updatedAt)}
 						</span>
 					</div>
 				</Link>

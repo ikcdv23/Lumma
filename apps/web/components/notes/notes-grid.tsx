@@ -9,6 +9,7 @@ import { createNoteAndRedirect } from "@/server/actions/notes-actions";
 type Note = {
 	id: string;
 	title: string;
+	content: unknown;
 	updatedAt: Date;
 };
 
@@ -76,18 +77,20 @@ export function NotesGrid({ folderId, folderName, notes }: NotesGridProps) {
 					</form>
 				</div>
 			) : (
-				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+				<div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-4">
 					{notes.map((note) => (
-						<NoteCard
-							key={note.id}
-							idNote={note.id}
-							folderId={folderId}
-							title={note.title}
-							updatedAt={note.updatedAt}
-							onEdit={() =>
-								openEditModal({ id: note.id, title: note.title })
-							}
-						/>
+						<div key={note.id} className="mb-4 break-inside-avoid">
+							<NoteCard
+								idNote={note.id}
+								folderId={folderId}
+								title={note.title}
+								content={note.content}
+								updatedAt={note.updatedAt}
+								onEdit={() =>
+									openEditModal({ id: note.id, title: note.title })
+								}
+							/>
+						</div>
 					))}
 				</div>
 			)}

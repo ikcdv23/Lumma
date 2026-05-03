@@ -1,63 +1,64 @@
 import Link from "next/link";
 import { FileText, Inbox } from "lucide-react";
 import { getInboxNotes } from "@/server/actions/notes-actions";
+import { NoteListItem } from "@/components/notes/note-list-item";
 
 export const metadata = {
-    title: "Inbox",
+	title: "Inbox",
 };
 
 export default async function InboxPage() {
-    const notes = await getInboxNotes();
-    const isEmpty = notes.length === 0;
+	const recentNotes = await getInboxNotes();
+	const isEmpty = recentNotes.length === 0;
 
-    return (
-        <div className="flex flex-col gap-6 p-6 md:p-8 w-full max-w-4xl mx-auto mt-30">
-            <div className="flex flex-col gap-1">
-                <div className="flex items-center gap-2">
-                    <Inbox className="size-7 text-primary" />
-                    <h1 className="text-3xl font-bold tracking-tight">Inbox</h1>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                    {isEmpty
-                        ? "No tienes notas rapidas pendientes"
-                        : `${notes.length} ${notes.length === 1 ? "nota rapida" : "notas rapidas"}`}
-                </p>
-            </div>
+	return (
+		<div className="flex flex-col gap-6 p-6 md:p-8 w-full max-w-4xl mx-auto mt-30">
+			<div className="flex flex-col gap-1">
+				<div className="flex items-center gap-2">
+					<Inbox className="size-7 text-primary" />
+					<h1 className="text-3xl font-bold tracking-tight">Inbox</h1>
+				</div>
+				<p className="text-sm text-muted-foreground">
+					{isEmpty
+						? "No tienes notas rapidas pendientes"
+						: `${recentNotes.length} ${recentNotes.length === 1 ? "nota rapida" : "notas rapidas"}`}
+				</p>
+			</div>
 
-            {isEmpty ? (
-                <div className="flex flex-col items-center justify-center gap-4 rounded-xl border border-dashed py-16 px-6 text-center">
-                    <div className="flex size-16 items-center justify-center rounded-full bg-primary/10 text-primary">
-                        <Inbox className="size-8" />
-                    </div>
-                    <div className="flex flex-col gap-1">
-                        <h3 className="text-lg font-semibold">Tu Inbox esta vacio</h3>
-                        <p className="text-sm text-muted-foreground max-w-xs">
-                            Las notas rapidas que crees apareceran aqui hasta que las muevas a una carpeta
-                        </p>
-                    </div>
-                </div>
-            ) : (
-                <div className="flex flex-col gap-1">
-                    {notes.map((note) => (
-                        <Link
-                            key={note.id}
-                            href={`/notes/${note.id}`}
-                            className="group flex items-center gap-3 rounded-lg border bg-card px-4 py-3 transition-all hover:border-primary/40 hover:shadow-sm"
-                        >
-                            <FileText className="size-4 text-muted-foreground shrink-0" />
-                            <span className="flex-1 text-sm font-medium truncate">
-                                {note.title}
-                            </span>
-                            <span className="text-xs text-muted-foreground shrink-0">
-                                {new Intl.DateTimeFormat("es-ES", {
-                                    day: "numeric",
-                                    month: "short",
-                                }).format(note.updatedAt)}
-                            </span>
-                        </Link>
-                    ))}
-                </div>
-            )}
-        </div>
-    );
+			<section className="flex flex-col gap-3">
+				<h2 className="text-sm font-medium text-muted-foreground">
+					Notas recientes
+				</h2>
+				<div className="flex flex-col">
+					{/* Cabecera de columnas */}
+					<div className="flex items-center gap-3 border-b px-3 pb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+						<div className="size-4 shrink-0" />
+						<span className="flex-1">Título</span>
+						<span className="w-28 shrink-0 text-right">Carpeta</span>
+						<span className="w-28 shrink-0 text-right">Actividad</span>
+					</div>
+
+					{/* Lista de notas (o empty state) */}
+					{recentNotes.length === 0 ? (
+						<p className="px-3 py-6 text-center text-sm text-muted-foreground">
+							Aún no tienes notas. Crea una rápida arriba para empezar.
+						</p>
+					) : (
+						<ul className="flex flex-col">
+							{recentNotes.map((recentNote) => (
+								<li key={recentNote.id}>
+									<NoteListItem
+										id={recentNote.id}
+										title={recentNote.title}
+										folderName={recentNote.folderId ?? null}
+										updatedAt={recentNote.updatedAt}
+									/>
+								</li>
+							))}
+						</ul>
+					)}
+				</div>
+			</section>
+		</div>
+	);
 }

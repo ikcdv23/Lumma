@@ -71,7 +71,9 @@ export async function getFolder(folderId: string) {
 			userId: session.user.id, // importante: verifica que sea SU carpeta
 		},
 		include: {
-			notes: true,
+			notes: {
+				orderBy: { updatedAt: "desc" },
+			},
 		},
 	});
 }
