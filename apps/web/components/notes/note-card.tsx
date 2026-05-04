@@ -9,12 +9,14 @@ import {
 	ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 import { formatRelative } from "@/lib/format-date";
+import { extractPreview } from "@/lib/note-content";
 import { deleteNote } from "@/server/actions/notes-actions";
 
 type NoteCardProps = {
 	idNote: string;
 	folderId: string;
 	title: string;
+	content: unknown;
 	updatedAt: Date;
 	onEdit: () => void;
 };
@@ -23,9 +25,12 @@ export function NoteCard({
 	idNote,
 	folderId,
 	title,
+	content,
 	updatedAt,
 	onEdit,
 }: NoteCardProps) {
+	const preview = extractPreview(content, 180);
+
 	return (
 		<ContextMenu>
 			<ContextMenuTrigger>
@@ -41,19 +46,32 @@ export function NoteCard({
 						<FileText className="size-4.5" />
 					</div>
 
-					{/* Título + fecha */}
-					<div className="flex flex-col gap-1.5 min-w-0">
-						<h3
-							className="font-semibold text-base leading-snug line-clamp-2 transition-colors duration-200 group-hover:text-primary"
-							title={title}
-						>
-							{title || (
-								<span className="font-normal italic text-muted-foreground/60">
-									Sin título
-								</span>
-							)}
-						</h3>
-						<span className="text-xs text-muted-foreground tabular-nums">
+					{/* Cuerpo: título + preview + fecha */}
+					<div className="flex flex-col gap-2 min-w-0 flex-1">
+						{title ? (
+							<h3
+								className="font-semibold text-base leading-snug line-clamp-2 transition-colors duration-200 group-hover:text-primary"
+								title={title}
+							>
+								{title}
+							</h3>
+						) : preview ? (
+							<h3 className="font-semibold text-base leading-snug line-clamp-2 text-foreground/70 transition-colors duration-200 group-hover:text-primary">
+								{preview}
+							</h3>
+						) : (
+							<h3 className="font-normal italic text-base leading-snug text-muted-foreground/60">
+								Vacía
+							</h3>
+						)}
+
+						{title && preview && (
+							<p className="text-sm text-muted-foreground line-clamp-6 leading-relaxed">
+								{preview}
+							</p>
+						)}
+
+						<span className="mt-auto text-xs text-muted-foreground tabular-nums pt-1">
 							{formatRelative(updatedAt)}
 						</span>
 					</div>

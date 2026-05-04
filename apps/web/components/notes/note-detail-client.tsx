@@ -106,16 +106,7 @@ export function NoteDetailClient({ note }: { note: Note }) {
 						placeholder="Sin título"
 						className="w-full bg-transparent text-4xl font-bold tracking-tight outline-none placeholder:text-muted-foreground/30 md:text-5xl"
 					/>
-					<div>
-						<div className="mt-2 flex items-center gap-3 text-xs text-muted-foreground">
-							<time
-								className="mt-2 block text-xs text-muted-foreground"
-								dateTime={note.createdAt.toISOString()}
-							>
-								Creado {formatRelative(note.createdAt)}
-							</time>
-						</div>
-					</div>
+					
 
 					<div className="mt-10 -ml-12 md:-ml-14">
 						<NoteEditor

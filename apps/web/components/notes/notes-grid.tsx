@@ -9,6 +9,7 @@ import { createNoteAndRedirect } from "@/server/actions/notes-actions";
 type Note = {
 	id: string;
 	title: string;
+	content: unknown;
 	updatedAt: Date;
 };
 
@@ -77,6 +78,7 @@ export function NotesGrid({ folderId, folderName, notes }: NotesGridProps) {
 								idNote={note.id}
 								folderId={folderId}
 								title={note.title}
+								content={note.content}
 								updatedAt={note.updatedAt}
 								onEdit={() =>
 									openEditModal({ id: note.id, title: note.title })
