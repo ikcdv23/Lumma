@@ -27,19 +27,18 @@ async function main() {
 	const seedData: Array<{
 		title: string;
 		folderName: string | null;
-		quick: boolean;
 		daysAgo: number;
 	}> = [
-		{ title: "Apuntes clase de Álgebra", folderName: "Matemáticas", quick: false, daysAgo: 0 },
-		{ title: "Receta tarta de queso", folderName: null, quick: true, daysAgo: 0 },
-		{ title: "Ideas TFG", folderName: null, quick: false, daysAgo: 0 },
-		{ title: "Bibliografía historia contemporánea", folderName: "Historia", quick: false, daysAgo: 1 },
-		{ title: "Lista de la compra", folderName: null, quick: true, daysAgo: 1 },
-		{ title: "Notas reunión equipo", folderName: "Trabajo", quick: false, daysAgo: 2 },
-		{ title: "Vocabulario inglés", folderName: "Inglés", quick: false, daysAgo: 3 },
-		{ title: "Pendientes de la semana", folderName: null, quick: true, daysAgo: 5 },
-		{ title: "Receta pasta carbonara", folderName: null, quick: true, daysAgo: 7 },
-		{ title: "Apuntes cálculo integral", folderName: "Matemáticas", quick: false, daysAgo: 10 },
+		{ title: "Apuntes clase de Álgebra", folderName: "Matemáticas", daysAgo: 0 },
+		{ title: "Receta tarta de queso", folderName: null, daysAgo: 0 },
+		{ title: "Ideas TFG", folderName: null, daysAgo: 0 },
+		{ title: "Bibliografía historia contemporánea", folderName: "Historia", daysAgo: 1 },
+		{ title: "Lista de la compra", folderName: null, daysAgo: 1 },
+		{ title: "Notas reunión equipo", folderName: "Trabajo", daysAgo: 2 },
+		{ title: "Vocabulario inglés", folderName: "Inglés", daysAgo: 3 },
+		{ title: "Pendientes de la semana", folderName: null, daysAgo: 5 },
+		{ title: "Receta pasta carbonara", folderName: null, daysAgo: 7 },
+		{ title: "Apuntes cálculo integral", folderName: "Matemáticas", daysAgo: 10 },
 	];
 
 	for (const item of seedData) {
@@ -56,7 +55,6 @@ async function main() {
 				content: {},
 				userId: user.id,
 				folderId,
-				isQuickNote: item.quick,
 				createdAt: date,
 				updatedAt: date,
 			},
