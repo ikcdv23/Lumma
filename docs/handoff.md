@@ -1,41 +1,97 @@
-# Handoff — actualizado 2026-04-30
+# Handoff — actualizado 2026-05-04 (final del dia)
 
 > Documento para retomar el trabajo en otra maquina o despues de un break. Lee esto **primero**.
 
 ## Resumen del progreso
 
-Sesion 2026-04-28 (anterior):
-- Auth con password (Zod, bcrypt, useActionState)
-- UI de carpetas pulida (icono, hover, breadcrumbs)
-- Esqueleto UI de notas
-- Mockups del nuevo `/home` (V1, V2, V3, V4)
-- Decision: **carpeta Inbox especial** (LUEGO REVERTIDA, ver abajo)
+Sesion 2026-04-28: Auth con password, UI carpetas pulida, esqueleto notas, mockups del home
 
-Sesiones 2026-04-29 y 2026-04-30 (esta):
-- Reversion de la decision Inbox: ahora es **vista virtual** (no entidad DB)
-- Implementacion del campo `isQuickNote` para distinguir quick notes de notas sin carpeta
+Sesiones 2026-04-29 / 2026-04-30:
+- Inbox como vista virtual
 - `/home` real con FastNotes + folder pills + Inbox pill
-- `/inbox` creada con listado de quick notes
-- Sidebar actualizado con pestaña Inbox
-- Despliegue a producci0n configurado (Vercel + Neon)
-- Discutida estrategia de autosave (pendiente de implementar)
+- `/inbox` creada
+- Despliegue a produccion (Vercel + Neon)
+
+Sesiones 2026-05-01 a 2026-05-03:
+- Autosave en FastNotes completado con debounce
+- Editor BlockNote parcial
+- `NewNoteButton` y `SaveFolderButton` extraidos con `useFormStatus`
+- `FolderModal` refactorizado a `<form action>`
+
+Sesion 2026-05-04 (HOY):
+- **Feature de feedback completa** (foro de comunidad con votos y estrellas)
+- Sidebar reorganizado (Feedback movido al footer)
+- Widths estandarizados a `max-w-5xl` en todas las paginas
+- Lección aprendida sobre `useFormStatus` (debe estar DENTRO del form)
+- **Reflexión estratégica**: descubierto competidor casi idéntico (lumanote.org)
+- **Decisión pendiente**: rebrand de Lumma o seguir como proyecto de aprendizaje
 
 ---
 
-## Decision arquitectonica importante: Inbox como vista virtual
+## NUEVA: Feature de feedback (community board)
 
-**Reversion respecto al handoff anterior**.
+Sistema de posts tipo foro/Canny.io donde usuarios logueados:
+- Crean posts con texto + rating (1-5 estrellas)
+- Votan posts de otros (toggle, 1 voto por usuario por post)
+- Borran sus propios posts
+- NO se pueden editar (decision tomada por simplicidad)
+- NO hay comentarios anidados (decision tomada para mantener simple)
 
-Inbox **NO es una entidad** (ni Folder especial, ni nada en DB). Es una **vista virtual** = filtro `WHERE isQuickNote = true`.
+### Schema
 
-### Distincion clave
+```prisma
+model FeedbackPost {
+  id        String         @id @default(uuid())
+  content   String
+  rating    Int                              // 1-5
+  edited    Boolean        @default(false)   // CANDIDATO A BORRAR (no se edita)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt        // CANDIDATO A BORRAR (no se actualiza)
+  author    User           @relation(fields: [authorId], references: [id])
+  authorId  String
+  votes     FeedbackVote[]
+}
 
-Una **quick note** y una **nota sin carpeta** son cosas distintas conceptualmente, aunque ambas tengan `folderId: null`:
+model FeedbackVote {
+  user      User         @relation(fields: [userId], references: [id])
+  userId    String
+  post      FeedbackPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId    String
 
-- **Quick note**: el usuario la crea sin pensar (captura rapida), pendiente de revisar/organizar. `isQuickNote: true`
-- **Nota sin carpeta intencional**: el usuario decidio no clasificarla. `isQuickNote: false` y `folderId: null`
+  @@id([userId, postId])  // un usuario solo puede votar 1 vez por post
+}
+```
 
-Esta distincion es **solo en la cabeza del usuario** — en DB son notas con campos distintos en una sola tabla (Single Table Inheritance).
+### Server actions (`server/actions/feedback-actions.ts`)
+
+```typescript
+createFeedbackPost(content: string, rating: number)
+deleteFeedbackPost(postId: string)
+getFeedbackPosts()                    // ordena por createdAt desc, incluye _count.votes y si tu votaste
+toggleFeedbackVote(postId: string)    // crea o borra segun exista
+```
+
+### Componentes nuevos
+
+- `components/feedback/star-rating.tsx` — 5 estrellas, modos interactivo (con onChange + hover preview) y readonly. Acepta `size`.
+- `components/feedback/vote-button.tsx` — Cápsula con corazón y contador. Usa `useFormStatus` + `motion`/`AnimatePresence` para animar el toggle.
+- `components/feedback/feedback-post-card.tsx` — Card del post con autor, fecha relativa, estrellas readonly, contenido, vote button, botón de eliminar (solo autor). Server Component que usa inline server actions.
+- `components/feedback/feedback-form.tsx` — Form con textarea + StarRating + submit button. Estado local de content y rating. Bloqueado hasta tener ambos.
+
+### Página
+
+- `app/(workspace)/feedback/page.tsx` — Header con icono + descripción + form + lista de posts (o estado vacío)
+
+### Sidebar
+
+- Link "Feedback" movido del nav principal al **footer**, encima del usuario
+- Razón: feedback no es parte del flujo de estudio. Tener "leer comentarios" como item primario distrae cuando el usuario quiere estudiar
+
+---
+
+## Decisión arquitectónica vigente: Inbox como vista virtual
+
+Inbox **NO es entidad**. Es filtro `WHERE folderId = null`.
 
 ### Schema actual (Note)
 
@@ -44,8 +100,8 @@ model Note {
   id                  String    @id @default(uuid())
   title               String
   content             Json      @default("{}")
-  isQuickNote         Boolean   @default(false)
-  autoDeleteAfterDays Int?
+  isQuickNote         Boolean   @default(false)   // NO USADO, candidato a borrar
+  autoDeleteAfterDays Int?                         // NO USADO, candidato a borrar
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
   folder              Folder?   @relation(fields: [folderId], references: [id], onDelete: SetNull)
@@ -55,19 +111,15 @@ model Note {
 }
 ```
 
-Decisiones tomadas:
-- `content` con default `{}` para evitar errores al crear notas vacias
-- `folder onDelete: SetNull`: si borras una carpeta, sus notas se vuelven sin carpeta (no se borran)
-- `isQuickNote` boolean para distinguir Inbox vs sin carpeta
-- `autoDeleteAfterDays`: campo per-nota para auto-delete (UI/logica pendiente)
+### Migraciones aplicadas
 
-### Migraciones aplicadas (orden)
-
-1. `20260428061216_add_password_field`
-2. `20260428114737_add_default_content_to_notes` (mal nombrada, en realidad puso default a `title`)
-3. `20260429064104_fix_note_content_default`
-4. `20260429103546_folder_delete_set_null`
-5. `20260430112144_quick_notes_implement` (añadio `isQuickNote` y `autoDeleteAfterDays`)
+1. `add_password_field`
+2. `add_default_content_to_notes`
+3. `fix_note_content_default`
+4. `folder_delete_set_null`
+5. `quick_notes_implement` (añadio isQuickNote y autoDeleteAfterDays — ahora son legacy)
+6. `add_feedback_forum` (FeedbackPost + FeedbackVote)
+7. `remove_feedback_unused_fields` (limpieza, NO confundir con la pendiente)
 
 ---
 
@@ -75,124 +127,147 @@ Decisiones tomadas:
 
 ### ✅ Funciona
 
-- Registro con email/password (Zod + bcrypt)
-- Login con email/password (NextAuth Credentials, JWT sessions)
-- Login con Google OAuth
-- CRUD de carpetas (crear, editar, eliminar, listar)
-- Pagina dentro de carpeta (`/folders/[folderId]`) con breadcrumbs
-- **Pagina `/home`** con: saludo + tarjeta Nota Rapida (animacion expand-to-fullscreen) + pildora Inbox + pildoras de carpetas reales
-- **Pagina `/inbox`** lista las quick notes
-- Sidebar con: Inicio | Inbox | Carpetas
-- Despliegue en Vercel + DB en Neon
-
-### ⚠️ A medias / parcialmente conectado
-
-- **FastNotes (`fast-note-card.tsx`)**: tiene la animacion V4 pero **sin logica de guardado**. El boton "Guardar" no hace nada, el titulo es uncontrolled, no hay autosave.
-- **`/home`**: muestra folders reales y conteo Inbox real, pero el componente FastNotes no esta conectado.
-- **`note-card.tsx` y `note-modal.tsx`**: TODOs sin conectar a server actions.
-- **Editor de nota individual** (`/folders/[folderId]/[noteId]`): no existe todavia.
-- **`autoDeleteAfterDays`**: campo añadido al schema pero ninguna logica usa el valor aun.
+- Auth con password (Zod + bcrypt) y Google OAuth
+- CRUD completo de carpetas (con `SaveFolderButton` y loading state)
+- CRUD basico de notas
+- `/home` con FastNotes (autosave funcional), Inbox pill, folder pills, notas recientes
+- `/inbox` lista quick notes
+- `/folders` y `/folders/[folderId]` con breadcrumbs
+- `/notes/[noteId]` editor con BlockNote (parcial pero usable)
+- `/feedback` foro completo con votos y estrellas (NUEVO HOY)
+- Despliegue Vercel + Neon
 
 ### ❌ Sin empezar
 
-- Editor de nota completo (rich text, autosave, etc.)
-- Verificacion por email (Mailtrap, sigue en plan `auth-with-password.md`)
-- Logica de "promocion": cuando se mueve una quick note a una carpeta, debe hacerse `isQuickNote: false`
-- Auto-delete de quick notes pasados X dias (cron o check on read)
-- Vista "Sin clasificar" (notas con `isQuickNote: false` y `folderId: null`)
+- Rate limiting en server actions (CRÍTICO si abres a usuarios reales)
+- Validación con Zod en `createFeedbackPost` (rating fuera de 1-5, content sin maxLength server-side)
+- Verificación email con Mailtrap (plan en `auth-with-password.md`)
+- Auto-delete de notas (campo añadido pero sin lógica)
+- Página de perfil del usuario (`/profile`) — no existe, el bloque del footer es decorativo
 
 ---
 
-## Siguiente paso pactado: AUTOSAVE en FastNotes
+## Patron establecido: Botones submit con loading state
 
-Javier quiere implementarlo el mismo. Va a hacerlo en el componente `components/notes/fast-note-card.tsx`.
+**Lección clave**: `useFormStatus` SOLO funciona DENTRO de un `<form>`. Si lo metes en el componente padre que contiene el form, siempre devuelve `pending: false`.
 
-### Estado actual del componente
+### Solución: extraer botones a componentes propios
 
-- Tiene state local: `isExpanded`, `noteText`
-- El input del titulo es **uncontrolled** (no useState, no value, no onChange)
-- El textarea esta controlled pero no se guarda en ningun sitio
-- No existe `noteId` ni `saveStatus`
+Ejemplos en proyecto:
+- `components/notes/new-note-button.tsx`
+- `components/folders/save-folder-button.tsx`
+- `components/feedback/vote-button.tsx`
 
-### Plan que hablamos para el autosave
-
-1. Pieza 1 — Anadir `useState` para `title` y hacerlo controlled
-2. Pieza 2 — Anadir `useState` para `noteId` (null inicialmente, se rellena tras el primer save)
-3. Pieza 3 — Anadir `useState` para `saveStatus` (`"idle" | "saving" | "saved"`)
-4. Pieza 4 — `useEffect` con debounce de 1000ms que mira `title` y `noteText`:
-   - Si no hay `noteId`, llama a una nueva version de `createQuickNote(title, content)` y guarda el id
-   - Si ya hay `noteId`, llama a `updateNote(noteId, { title, content })`
-5. Pieza 5 — Adaptar `createQuickNote` para que acepte `title` y `content` como parametros (ahora no recibe nada, pone "Nota rapida N" auto-numerada). Decision: que use lo que el usuario escriba.
-
-### Conceptos clave del debounce con useEffect
+### Patrón
 
 ```tsx
-useEffect(() => {
-  setSaveStatus("saving");
-  const timer = setTimeout(async () => {
-    // guardar
-    setSaveStatus("saved");
-  }, 1000);
-  return () => clearTimeout(timer);  // cancela timer si el efecto se re-ejecuta
-}, [title, noteText]);
+"use client";
+import { useFormStatus } from "react-dom";
+
+export function MyButton() {
+  const { pending } = useFormStatus();
+  return (
+    <Button type="submit" disabled={pending}>
+      {pending ? <Loader2 className="animate-spin" /> : <Icon />}
+      {pending ? "Cargando..." : "Texto"}
+    </Button>
+  );
+}
 ```
 
-El `clearTimeout` en el cleanup es lo que hace que mientras el usuario sigue tecleando se reinicie el contador.
+Y se usa siempre dentro de `<form action={...}>`. **SRP aplicado**: cada componente tiene UNA responsabilidad.
 
-### Race conditions (heads up para mas adelante)
+### Donde aplicar/no aplicar
 
-Si el usuario teclea rapido pueden solaparse 2 saves. Para una primera version se puede ignorar. Para version robusta, usar `AbortController` o desestimar respuestas obsoletas.
+- ✅ Botones que disparan server actions (crear, guardar, votar)
+- ❌ Botones que solo abren modales (acción instantánea, no necesitan loading)
+- ❌ FastNotes "Guardar" — eliminado porque hay autosave
 
 ---
 
-## Archivos clave creados/modificados desde el handoff anterior
+## Bugs encontrados HOY
 
-### Schema y migraciones
+### 1. Prisma client cache después de migrar
 
-- `prisma/schema.prisma`:
-  - Note: `content @default("{}")`, `isQuickNote Boolean @default(false)`, `autoDeleteAfterDays Int?`
-  - Note.folder: `onDelete: SetNull` (era Cascade implicito)
-- 3 migraciones nuevas (ver lista arriba)
+Después de aplicar migración (`add_feedback_forum`), `prisma.feedbackPost` era `undefined` en runtime aunque los tipos generados estaban bien. **Causa**: `lib/prisma.ts` cachea la instancia en `globalThis` en dev. El `pnpm dev` que estaba corriendo seguía con la instancia vieja en memoria.
 
-### Server actions (`server/actions/notes-actions.ts`)
+**Fix**: matar el dev server (`Ctrl+C`) y arrancar fresco con `pnpm dev`. NO basta con guardar archivo — el cache vive a nivel de módulo Node.
 
-- `createQuickNote()`: crea con titulo auto-numerado "Nota rapida N", `isQuickNote: true`, `folderId: null`
-- `getInboxCount()`: cuenta notas con `isQuickNote: true` (cambio: antes contaba `folderId: null`)
-- `getInboxNotes()`: lista quick notes ordenadas por `updatedAt desc`
-- `getRecentNotes(limit)`: notas recientes con info de folder
+**Lección**: cuando cambias schema o regeneras cliente Prisma, **siempre** reinicia dev server.
 
-### Componentes nuevos
+### 2. Vercel build fallaba por column inexistente
 
-- `components/folders/folder-pill.tsx`: chip estilo pildora para carpetas (en home). **Bug fix**: `href` apuntaba a `/notes/${idFolder}` (ruta inexistente), corregido a `/folders/${idFolder}`.
-- `components/notes/fast-note-card.tsx`: V4 mockup adaptado al home, con animacion layoutId. Sin logica todavia.
-- `app/(workspace)/home/home-client.tsx`: **archivo huerfano**, no se usa en `home/page.tsx`. Es residuo de cuando se planeaba separar Server/Client. Se puede borrar.
+Tipo error: `Invalid prisma.note.count() invocation: The column 'Note.isQuickNote' does not exist`. Causa: aplicaste migración a Docker pero NO a Neon. Vercel deployó código que esperaba columnas que en Neon no existían.
 
-### Paginas
+**Workflow recordatorio**:
+1. Editar schema
+2. `pnpm prisma migrate dev --name X` (aplica a Docker)
+3. **ANTES de pushear**: cambiar `.env` a Neon, `pnpm prisma migrate deploy`, revertir `.env`
+4. Push
 
-- `app/(workspace)/home/page.tsx`: usa `FastNotes` + Inbox pill + folder pills reales
-- `app/(workspace)/inbox/page.tsx`: lista de quick notes, estado vacio decente
-- `app/(workspace)/layout.tsx`: añadido enlace Inbox al sidebar
+### 3. Hydration warning en Sidebar
 
-### Mockups (datos referencia)
+Causa: combinación Radix `Slot` + Next `<Link>` + `asChild` produce mismatch SSR/cliente. Conocido. **No tiene fix limpio**, decidimos aceptar el warning (es recoverable, solo en dev console, no afecta producción).
 
-- `app/(workspace)/mockups/v1/page.tsx`, `v2`, `v3`, `v4`
-- `app/(workspace)/home/mock-data.ts` (compartido por los mockups via path relativo)
+---
 
-### Despliegue (NUEVO en esta sesion)
+## REFLEXIÓN ESTRATÉGICA: descubierto competidor (HOY)
 
-- **Hosting**: Vercel (https://lumma-web.vercel.app)
-- **DB produccion**: Neon (PostgreSQL serverless)
-- **Variables**: configuradas en Vercel → Settings → Environment Variables
-- **NEXTAUTH_SECRET → AUTH_SECRET**: NextAuth v5 cambio el nombre de la variable
+### El descubrimiento
 
-#### Workflow de migraciones a Neon
+Javier encontró **lumanote.org** — una app de notas con:
+- Pomodoro / Focus Timer (25m, 50m, 10m presets)
+- Deep Focus Mode (= Zen Mode)
+- AI Flashcards desde notas
+- Practice quizzes
+- Exam summaries
+- Posicionada **"For Students"** explícitamente
+- 10k+ usuarios activos según landing
+- Inglés, mercado angloparlante
 
-Cuando hay migraciones pendientes que aplicar a produccion (antes de pushear):
+**Tiene exactamente** lo que Lumma planeaba en su roadmap. Es esencialmente el mismo producto.
 
-1. En `apps/web/.env`, comentar `DATABASE_URL` de Docker y descomentar la de Neon
-2. `cd apps/web && pnpm prisma migrate deploy`
-3. Revertir `.env`
-4. Ya se puede pushear; Vercel detecta y despliega solo
+### Honesta lectura
+
+El roadmap de Lumma (Pomodoro + Zen Mode + flashcards + estudiantes) tiene poca diferenciación frente a Luma. Los diferenciadores que quedan son débiles individualmente:
+- Idioma español (no es defensible si Luma decide localizar)
+- Bóveda privada (es un feature, lo añaden en una semana)
+- Open source (no es ventaja para 99% de usuarios)
+
+### Naming problem
+
+**"Lumma" vs "Luma"** — fonéticamente idénticos. Para SEO, brand recognition, etc. competir con un nombre tan parecido es perder. Si Lumma fuese un proyecto comercial, **rebrand sería casi obligatorio**.
+
+Para proyecto de aprendizaje (que es lo que es), el daño es solo emocional. Funcionalmente no afecta.
+
+Javier había planeado llamar al asistente IA **"Luminita"** — diminutivo en español, "lucecita". Buen branding. Sobrevive al rebrand del producto principal porque no depende del nombre Lumma.
+
+### Decisión pendiente (Javier debe meditar)
+
+3 opciones discutidas:
+
+**A. Continuar como proyecto de aprendizaje sin pretensión comercial**
+- Lumma es portfolio, sandbox para aprender. Sin presión de competir.
+- Mantener nombre Lumma sin estrés.
+- Esto no se decide aún pero es la opción menos disruptiva.
+
+**B. Pivot radical de nicho**
+- Salir del mercado "app de notas para estudiantes generales" (océano rojo).
+- Buscar nicho más cerrado: estudiantes de medicina, opositores españoles, etc.
+- Implica replantear features y mensaje.
+
+**C. Abandonar y empezar algo nuevo**
+- Canalizar todo lo aprendido en una idea propia, no copia.
+- Lumma queda como portfolio cerrado.
+
+Mi recomendación a Javier: **opción A**. Sigue construyendo Lumma como aprendizaje sin pretender competir. Cuando tengas una idea original donde TÚ descubres el problema, le aplicas todo lo aprendido aquí.
+
+### Lo que Javier NO ha perdido
+
+- Experiencia técnica acumulada (auth, Prisma, Next.js avanzado, deploy, decisiones de producto)
+- Proyecto funcional en portfolio
+- Proceso de tomar decisiones de UX
+- Lección de "encontrar competidor" — vivencia real de mercado
 
 ---
 
@@ -200,71 +275,62 @@ Cuando hay migraciones pendientes que aplicar a produccion (antes de pushear):
 
 ### React/Next.js
 
-- **Server Components por defecto**, `"use client"` solo cuando necesitas hooks/eventos
+- Server Components por defecto, `"use client"` solo cuando necesitas hooks/eventos
 - **Patron Server + Client**: pagina como Server Component, partes interactivas en Client Components
-- **`useActionState`** para conectar forms con server actions cuando se necesita mostrar errores (con firma `(prevState, formData)`)
-- **Type narrowing**: `if (!session?.user?.id) return;` permite a TypeScript saber que no es undefined despues
-- **`asChild`** en componentes Shadcn cuando quieres que el hijo (Link, button) sea el elemento real
+- **`useActionState`** para errores en forms (firma `(prevState, formData)`)
+- **`useFormStatus`** SOLO funciona DENTRO de un `<form>` — extrae el botón a componente propio
+- **Type narrowing**: `if (!session?.user?.id) return;` permite a TS saber que no es undefined
+- **`asChild`** en Shadcn cuando quieres que el hijo (Link, button) sea el elemento real
+- **Debounce con `useEffect` + `setTimeout` + cleanup `clearTimeout`**: para autosave o acciones que se reinician mientras el usuario sigue activo
 
 ### Prisma
 
-- **Filtrar por `userId`** en TODAS las queries para seguridad
-- **Regenerar cliente** despues de cambios en schema: `pnpm prisma generate` (a veces `migrate dev` no lo hace solo, hay que reiniciar TS server tambien)
-- **Single Table Inheritance**: cuando entidades comparten >70% de comportamiento, una sola tabla con campo discriminador (es lo que hicimos con `isQuickNote`)
+- **Filtrar por `userId`** en TODAS las queries (seguridad)
+- **Regenerar cliente** después de schema: `pnpm prisma generate` (a veces `migrate dev` no lo hace, y reiniciar TS server)
+- **Reiniciar dev server después de regenerar cliente** (cache en globalThis)
 - `onDelete: SetNull` en relaciones cuando borrar el padre no implica borrar al hijo
+- **Single Table Inheritance**: cuando entidades comparten >70% comportamiento, una sola tabla con campo discriminador
 
-### Diseno UX
+### Diseño UX
 
-- **Inbox como vista virtual** > Inbox como entidad: mas simple, sin edge cases (crear al signup, prevenir borrado, etc.)
-- **`folderId: null + isQuickNote`** distingue intenciones del usuario sin complicar el schema
-- **Componentes solo se reutilizan si comparten >70% comportamiento**, no solo apariencia. La pildora del Inbox **NO** usa FolderPill porque cambian icono, href y semantica.
+- **Inbox como vista virtual** > Inbox como entidad
+- **Componentes solo se reutilizan si comparten >70% comportamiento**, no solo apariencia
+- **Autosave > botón Guardar**: si guardas automáticamente, no hace falta botón. Solo indicador.
+- **Escape para cerrar modales**: detalle pulido esperado por power users
+- **Feedback en footer del sidebar**: lo no-prioritario fuera del flujo principal
 
-### Bugs corregidos
+### YAGNI
+
+- Si añades campos al schema "por si acaso" pero nunca los usas, **bórralos**. Migrar es trivial.
+- Si propones una prop a un componente porque "podría hacer falta" pero no la usas, **NO la añadas**. (Lección de `variant` en NewNoteButton)
+
+### Bugs corregidos histórico
 
 - `revalidatePath("/notes")` y `"/ folders"` (con espacio) → `/folders`
 - `import constants from "node:constants"` (basura por autocompletado)
-- `String` (mayuscula) vs `string` (primitivo)
+- `String` (mayúscula) vs `string` (primitivo)
 - `formData.get(confirmPass)` sin comillas
-- `onChange={(e) => setEmail(...)}` en input de password (copy-paste en register-form)
-- Logica invertida en validacion (`confirmPass` truthy en vez de `!confirmPass`)
-- **NUEVO**: `FolderPill` apuntaba a `/notes/${idFolder}` (ruta inexistente)
-- **NUEVO**: `getInboxCount` filtraba `folderId: null` (incluia notas sin carpeta no-quick)
+- Lógica invertida en validación
+- `FolderPill` apuntaba a `/notes/${idFolder}` → `/folders/${idFolder}`
+- `getInboxCount` filtraba `folderId: null` (problema cuando se intentó usar `isQuickNote`)
+- `useFormStatus` en componente padre del form (siempre `pending: false`)
+- Prisma client cache en dev tras migración
 
 ---
 
-## TODOs concretos en codigo
-
-### `components/notes/fast-note-card.tsx`
-- Sin logica de guardado. Pendiente: autosave (siguiente paso, lo hace Javier).
-
-### `components/notes/note-card.tsx`
-- Linea ~50: `// TODO: llamar a deleteNote(idNote)`
-
-### `components/notes/note-modal.tsx`
-Funcion `handleSave`:
-```tsx
-// TODO: si isEditing → updateNote(note.id, { title })
-// TODO: si NO isEditing → createNote(folderId, title)
-```
-
-### `app/(workspace)/home/home-client.tsx`
-- Archivo huerfano. **Decidir**: borrar o usar.
-
----
-
-## Comandos utiles
+## Comandos útiles
 
 ```bash
 # Levantar todo (desde raiz)
 pnpm dev
 
-# Migracion despues de cambiar schema (desde apps/web/)
+# Migración después de cambiar schema (desde apps/web/)
 pnpm prisma migrate dev --name nombre-descriptivo
 
-# Regenerar cliente Prisma manualmente (si migrate no lo hace)
+# Regenerar cliente Prisma manualmente
 pnpm prisma generate
 
-# Aplicar migraciones a Neon en produccion (con .env apuntando a Neon)
+# Aplicar migraciones a Neon en producción (con .env apuntando a Neon)
 pnpm prisma migrate deploy
 
 # Ver/editar DB visualmente
@@ -279,17 +345,18 @@ docker compose up -d
 
 ---
 
-## Donde retomar (siguiente sesion)
+## Donde retomar (siguiente sesión)
 
 Por orden de prioridad:
 
-1. **Autosave en FastNotes** (lo escribira Javier, segun plan arriba) — incluir adaptar `createQuickNote` a recibir title/content
-2. **Borrar `home-client.tsx`** si ya no se usa
-3. **Conectar TODOs** de `note-card.tsx` y `note-modal.tsx`
-4. **Logica de promocion**: al mover quick note a folder, marcar `isQuickNote: false`
-5. **Editor de nota individual** (`/folders/[folderId]/[noteId]/page.tsx`)
-6. Vista "Sin clasificar" (filtro `isQuickNote: false AND folderId: null`)
-7. Auto-delete de quick notes (cron o filtro on read)
+1. **Decisión sobre Lumma**: continuar como aprendizaje, pivotar nicho, o abandonar (Javier debe decidir)
+2. **Decisión sobre rebrand**: cambiar de "Lumma" a otro nombre por el conflicto con Luma (relacionado con punto 1)
+3. **Cleanup schema**: eliminar `isQuickNote`, `autoDeleteAfterDays`, `edited`, `updatedAt` de FeedbackPost. Migración local + Neon.
+4. **Cleanup código**: borrar `home-client.tsx` huerfano, mockups si ya no sirven
+5. **Validación con Zod en feedback-actions** (rating 1-5, content max 2000 chars server-side)
+6. **Rate limiting** en server actions (CRÍTICO antes de abrir a más usuarios)
+7. Verificación email con Mailtrap
+8. Página de perfil
 
 ---
 
@@ -297,10 +364,29 @@ Por orden de prioridad:
 
 Javier quiere:
 
-- **Aprender, no que escriba codigo por el** — explica antes de tocar archivos
-- **Para UI/diseño esta OK que el AI escriba codigo**, para LOGICA el lo implementa
+- **Aprender, no que el AI escriba código por él** — explicar antes de tocar archivos
+- **Para UI/diseño está OK que el AI escriba código**, para LÓGICA él lo implementa
 - **Ir paso a paso** — un cambio a la vez
 - **Verificar antes de dar feedback** — leer el archivo real, no asumir
+- **No añadir features extra que no se piden**
 - **Respuestas directas, sin trailing summaries, sin emojis**
 - **Idioma**: español
-- **Prefiere preguntar el "por que"** y entender los principios subyacentes (ej: pidio mas detalle sobre Single Table Inheritance, debounce, etc.)
+- **Prefiere preguntar el "por qué"** y entender principios subyacentes (Single Table Inheritance, debounce, useFormStatus restrictions, YAGNI, SOLID/SRP, hydration mismatches, security testing)
+
+---
+
+## Aside: aprendizaje de pentesting (HOY)
+
+Javier ayudó a un amigo a auditar su app (calorie-ai-jbrl.vercel.app) usando Postman. Aprendizajes que valen para Lumma:
+
+- **OWASP Top 10**: IDOR, info disclosure, rate limiting
+- **Setup de Postman con cookies** de NextAuth
+- **Búsqueda de secrets en bundles JS** (Sources tab + Ctrl+Shift+F)
+- **Wappalyzer** para reconocimiento de stack
+- **Reportes profesionales** de bugs (severidad + repro + impacto + fix)
+
+Esto refuerza la importancia de:
+- Validar inputs server-side (no solo HTML5)
+- Filtrar por `userId` siempre
+- Mensajes de error neutros (no leak info)
+- Rate limiting (Lumma NO lo tiene)

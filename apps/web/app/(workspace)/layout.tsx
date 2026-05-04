@@ -1,6 +1,6 @@
 import "@blocknote/mantine/style.css";
 import { auth, signOut } from "@/auth";
-import { Folder, Home, Inbox, LogOut, User } from "lucide-react";
+import { Folder, Home, Inbox, LogOut, MessageSquare, User } from "lucide-react";
 import Link from "next/link";
 import { cookies } from "next/headers";
 import {
@@ -66,12 +66,21 @@ export default async function WorkspaceLayout({
 								</Link>
 							</SidebarMenuButton>
 						</SidebarMenuItem>
-						
+
 					</SidebarMenu>
 				</SidebarContent>
 
 				<SidebarFooter>
 					<SidebarMenu>
+						<SidebarMenuItem>
+							<SidebarMenuButton asChild>
+								<Link href="/feedback">
+									<MessageSquare className="size-5" />
+									<span className="text-muted-foreground">Feedback</span>
+								</Link>
+							</SidebarMenuButton>
+						</SidebarMenuItem>
+
 						<SidebarMenuItem>
 							<SidebarMenuButton size="lg">
 								<User />

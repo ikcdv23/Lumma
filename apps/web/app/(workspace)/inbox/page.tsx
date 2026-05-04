@@ -12,7 +12,7 @@ export default async function InboxPage() {
 	const isEmpty = recentNotes.length === 0;
 
 	return (
-		<div className="flex flex-col gap-6 p-6 md:p-8 w-full max-w-4xl mx-auto mt-30">
+		<div className="flex flex-col gap-6 p-6 md:p-8 w-full max-w-5xl mx-auto">
 			<div className="flex flex-col gap-1">
 				<div className="flex items-center gap-2">
 					<Inbox className="size-7 text-primary" />

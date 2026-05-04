@@ -29,6 +29,10 @@ model User {
   updatedAt DateTime @updatedAt
   folders   Folder[]
   notes     Note[]
+
+  feedbackVotes FeedbackVote[]
+
+  feedbackPosts FeedbackPost[]
 }
 
 model Account {
@@ -79,15 +83,31 @@ model Note {
   id                  String   @id @default(uuid())
   title               String
   content             Json     @default("{}")
-  isQuickNote         Boolean  @default(false)
-  autoDeleteAfterDays Int?
-  //  NoteType { REGULAR | QUICK | DRAFT } por si en el futuro existen más tipos
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
   folder              Folder?  @relation(fields: [folderId], references: [id], onDelete: SetNull)
   folderId            String?
   user                User     @relation(fields: [userId], references: [id])
   userId              String
+}
+
+model FeedbackPost {
+  id        String         @id @default(uuid())
+  content   String
+  rating    Int
+  createdAt DateTime       @default(now())
+  author    User           @relation(fields: [authorId], references: [id])
+  authorId  String
+  votes     FeedbackVote[]
+}
+
+model FeedbackVote {
+  user   User         @relation(fields: [userId], references: [id])
+  userId String
+  post   FeedbackPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId String
+
+  @@id([userId, postId])
 }
 
 /**

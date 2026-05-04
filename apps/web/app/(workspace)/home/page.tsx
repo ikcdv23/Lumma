@@ -19,7 +19,7 @@ export default async function HomePage() {
 	const recentNotes = await getRecentNotes(10);
 
 	return (
-		<div className="flex flex-col gap-10 p-6 md:p-12 w-full max-w-4xl mx-auto mt-30">
+		<div className="flex flex-col gap-10 p-6 md:p-12 w-full max-w-5xl mx-auto">
 			<FastNotes userName={userName} />
 
 			<section>
