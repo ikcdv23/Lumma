@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { FilePlus, FileText } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { FileText } from "lucide-react";
 import { NoteCard } from "./note-card";
+import { NewNoteButton } from "./new-note-button";
 import { createNoteAndRedirect } from "@/server/actions/notes-actions";
 
 type Note = {
@@ -49,10 +49,7 @@ export function NotesGrid({ folderId, folderName, notes }: NotesGridProps) {
 
 				{!isEmpty && (
 					<form action={createNoteForFolder}>
-						<Button type="submit">
-							<FilePlus className="size-4" />
-							Nueva nota
-						</Button>
+						<NewNoteButton />
 					</form>
 				)}
 			</div>
@@ -70,10 +67,7 @@ export function NotesGrid({ folderId, folderName, notes }: NotesGridProps) {
 						</p>
 					</div>
 					<form action={createNoteForFolder}>
-						<Button type="submit" variant="outline">
-							<FilePlus className="size-4" />
-							Nueva nota
-						</Button>
+						<NewNoteButton variant="outline" />
 					</form>
 				</div>
 			) : (
