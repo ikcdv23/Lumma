@@ -40,7 +40,7 @@ export async function getFeedbackPosts() {
     if (!session?.user?.id) return [];
 
     return await prisma.feedbackPost.findMany({
-        orderBy: { createdAt: "desc" },
+        orderBy: { votes: { _count: "desc" } },
         include: {
             author: { select: { name: true } },
             _count: { select: { votes: true } },
