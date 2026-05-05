@@ -4,6 +4,7 @@ import { Folder, Home, Inbox, LogOut, MessageSquare, User } from "lucide-react";
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { NotesSearch } from "@/components/notes/notes-search"
+import { prisma } from "@/lib/prisma";
 import {
 	Sidebar,
 	SidebarContent,
@@ -26,6 +27,15 @@ export default async function WorkspaceLayout({
 	const session = await auth();
 	const cookieStore = await cookies();
 	const sidebarOpen = cookieStore.get("sidebar_state")?.value !== "false";
+
+	// Leer nombre fresco de la BD (el JWT no se actualiza al cambiar el perfil)
+	const dbUser = session?.user?.id
+		? await prisma.user.findUnique({
+				where: { id: session.user.id },
+				select: { name: true },
+			})
+		: null;
+	const displayName = dbUser?.name ?? session?.user?.name ?? "Usuario";
 	return (
 		<SidebarProvider defaultOpen={sidebarOpen}>
 			<Sidebar variant="inset" suppressHydrationWarning>
@@ -83,7 +93,7 @@ export default async function WorkspaceLayout({
 								<User />
 								<div className="flex flex-col">
 									<span className="text-sm font-medium">
-										{session?.user?.name ?? "Usuario"}
+										{displayName}
 									</span>
 								</div>
 							</Link>
@@ -95,12 +105,10 @@ export default async function WorkspaceLayout({
 									await signOut({ redirectTo: "/login" });
 								}}
 							>
-								<SidebarMenuButton asChild>
-									<button type="submit">
-										<LogOut />
-										<span>Cerrar sesion</span>
-									</button>
-								</SidebarMenuButton>
+								<button type="submit" className={sidebarMenuButtonVariants()}>
+									<LogOut />
+									<span>Cerrar sesion</span>
+								</button>
 							</form>
 						</SidebarMenuItem>
 					</SidebarMenu>

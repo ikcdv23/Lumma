@@ -60,6 +60,7 @@ export async function updateName(formData: FormData) {
 	});
 
 	revalidatePath("/profile");
+	revalidatePath("/", "layout");
 	return { success: true };
 }
 
