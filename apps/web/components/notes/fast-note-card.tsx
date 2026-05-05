@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Inbox, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,7 @@ export default function FastNotes({ note, userName }: FastNotesProps) {
 	const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">(
 		"idle",
 	);
+	const titleRef = useRef<HTMLInputElement>(null);
 	useEffect(() => {
 		// Guard: si no hay nada escrito, no haces nada
 		if (!title.trim() && !noteText.trim()) return;
@@ -124,7 +125,12 @@ export default function FastNotes({ note, userName }: FastNotesProps) {
 						<motion.div
 							layoutId="quick-note"
 							className="fixed inset-4 md:inset-8 lg:inset-16 z-50 flex flex-col rounded-2xl border bg-card shadow-2xl overflow-hidden"
-							transition={{ duration: 0.25, ease: [0.32, 0.72, 0, 1] }}
+							transition={{
+								type: "spring",
+								damping: 28,
+								stiffness: 220,
+							}}
+							onAnimationComplete={() => titleRef.current?.focus()}
 						>
 							{/* Header del modal */}
 							<div className="flex items-center justify-between gap-4 border-b px-6 py-4">
@@ -157,12 +163,12 @@ export default function FastNotes({ note, userName }: FastNotesProps) {
 							<div className="flex-1 overflow-auto p-8 md:p-12">
 								<input
 									id="title"
+									ref={titleRef}
 									value={title}
 									onChange={(e) => setTitle(e.target.value)}
 									type="text"
 									placeholder="Titulo de la nota"
 									className="w-full bg-transparent text-2xl md:text-3xl font-bold tracking-tight outline-none placeholder:text-muted-foreground/50"
-									autoFocus
 								/>
 								<textarea
 									value={noteText}
