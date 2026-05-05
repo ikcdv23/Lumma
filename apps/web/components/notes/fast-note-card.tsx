@@ -91,19 +91,13 @@ export default function FastNotes({ note, userName }: FastNotesProps) {
 						onClick={() => setIsExpanded(true)}
 						className="w-full max-w-2xl flex flex-col gap-3 rounded-2xl border bg-card p-6 text-left transition-shadow hover:shadow-md cursor-text"
 					>
-						<motion.div
-							layoutId="quick-note-header"
-							className="flex items-center gap-2"
-						>
+						<div className="flex items-center gap-2">
 							<Inbox className="size-5 text-primary" />
 							<span className="font-medium">Nota rapida</span>
-						</motion.div>
-						<motion.p
-							layoutId="quick-note-placeholder"
-							className="text-muted-foreground"
-						>
+						</div>
+						<p className="text-muted-foreground">
 							{noteText || "Escribe lo que tengas en mente..."}
-						</motion.p>
+						</p>
 					</motion.button>
 				)}
 
@@ -135,16 +129,13 @@ export default function FastNotes({ note, userName }: FastNotesProps) {
 							{/* Header del modal */}
 							<div className="flex items-center justify-between gap-4 border-b px-6 py-4">
 								<div className="flex items-center gap-3">
-									<motion.div
-										layoutId="quick-note-header"
-										className="flex items-center gap-2"
-									>
+									<div className="flex items-center gap-2">
 										<Inbox className="size-5 text-primary" />
 										<span className="font-medium">Nota rapida</span>
 										<div className="flex items-center rounded-full border bg-card px-2 py-1 text-xs text-muted-foreground">
 											Inbox
 										</div>
-									</motion.div>
+									</div>
 
 									{/* Indicador de auto-save */}
 									<SaveIndicator status={saveStatus} />
@@ -173,15 +164,13 @@ export default function FastNotes({ note, userName }: FastNotesProps) {
 									className="w-full bg-transparent text-2xl md:text-3xl font-bold tracking-tight outline-none placeholder:text-muted-foreground/50"
 									autoFocus
 								/>
-								<motion.div layoutId="quick-note-placeholder">
-									<textarea
-										value={noteText}
-										onChange={(e) => setNoteText(e.target.value)}
-										placeholder="Escribe lo que tengas en mente..."
-										rows={20}
-										className="w-full mt-4 bg-transparent text-base leading-relaxed outline-none placeholder:text-muted-foreground/50 resize-none"
-									/>
-								</motion.div>
+								<textarea
+									value={noteText}
+									onChange={(e) => setNoteText(e.target.value)}
+									placeholder="Escribe lo que tengas en mente..."
+									rows={20}
+									className="w-full mt-4 bg-transparent text-base leading-relaxed outline-none placeholder:text-muted-foreground/50 resize-none"
+								/>
 							</div>
 						</motion.div>
 					</>
