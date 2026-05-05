@@ -1,5 +1,4 @@
-import Link from "next/link";
-import { FileText, Inbox } from "lucide-react";
+import { Inbox } from "lucide-react";
 import { getInboxNotes } from "@/server/actions/notes-actions";
 import { NoteListItem } from "@/components/notes/note-list-item";
 
@@ -50,7 +49,8 @@ export default async function InboxPage() {
 									<NoteListItem
 										id={recentNote.id}
 										title={recentNote.title}
-										folderName={recentNote.folderId ?? null}
+										folderId={recentNote.folderId}
+										folderName={null}
 										updatedAt={recentNote.updatedAt}
 									/>
 								</li>

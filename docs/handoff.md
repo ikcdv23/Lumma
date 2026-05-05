@@ -349,14 +349,17 @@ docker compose up -d
 
 Por orden de prioridad:
 
-1. **Decisión sobre Lumma**: continuar como aprendizaje, pivotar nicho, o abandonar (Javier debe decidir)
-2. **Decisión sobre rebrand**: cambiar de "Lumma" a otro nombre por el conflicto con Luma (relacionado con punto 1)
-3. **Cleanup schema**: eliminar `isQuickNote`, `autoDeleteAfterDays`, `edited`, `updatedAt` de FeedbackPost. Migración local + Neon.
-4. **Cleanup código**: borrar `home-client.tsx` huerfano, mockups si ya no sirven
-5. **Validación con Zod en feedback-actions** (rating 1-5, content max 2000 chars server-side)
-6. **Rate limiting** en server actions (CRÍTICO antes de abrir a más usuarios)
-7. Verificación email con Mailtrap
-8. Página de perfil
+1. **Sessions (feature diferenciador)** — ver sección dedicada al final del handoff. Próximos pasos concretos:
+   - Definir qué es "sesión completada" (Javier)
+   - Prototipo IA en `/lab/flashcards`
+   - UX del MVP en papel/Figma
+2. **Cleanup schema**: eliminar `isQuickNote`, `autoDeleteAfterDays`, `edited`, `updatedAt` de FeedbackPost. Migración local + Neon.
+3. **Cleanup código**: borrar `home-client.tsx` huerfano, mockups si ya no sirven
+4. **Rate limiting** en server actions (CRÍTICO antes de abrir a más usuarios)
+5. **Decisión sobre rebrand**: cambiar de "Lumma" a otro nombre por el conflicto con Luma
+6. Verificación email con Mailtrap
+7. ~~Página de perfil~~ — ✅ hecha 2026-05-05
+8. ~~Validación con Zod en feedback-actions~~ — Javier optó por validación manual con `if`, decisión consciente para low-risk feature
 
 ---
 
@@ -390,3 +393,147 @@ Esto refuerza la importancia de:
 - Filtrar por `userId` siempre
 - Mensajes de error neutros (no leak info)
 - Rate limiting (Lumma NO lo tiene)
+
+---
+
+## Sessions (antes Zen Mode) — visión y plan (2026-05-05)
+
+### Replanteo del feature diferenciador
+
+Lo que originalmente era "Zen Mode" (aislarte con tus notas elegidas) ha evolucionado en algo más ambicioso: **Sessions**. Una sesión registrable de estudio que:
+
+- Toma carpetas/notas elegidas previamente
+- Corre un Pomodoro configurable (estudio + descansos + rondas)
+- Muestra info en tiempo real (tiempo restante, ronda actual)
+- Integra IA para generar **flashcards o tests** a partir de los apuntes de la sesión
+- Permite configuración rica: "1 test antes, 2 rondas 30/5, 1 ronda flashcards, 30 min estudio final"
+- Soporta **plantillas** (predefinidas o creadas por el usuario)
+- Tiene **calendario** para programar/recordar días de estudio
+- Lleva **estadísticas**: racha de días, tiempo invertido, tests/flashcards respondidos
+- Streak para fomentar el hábito (bonificable con días de gracia tipo Duolingo v2)
+
+Es el feature diferenciador de Lumma vs Notion/Apple Notes/Bear. Sin esto, Lumma es una app de notas más.
+
+### Por qué se pospuso tanto (contexto)
+
+Javier no tenía claro la forma. La duda principal era la integración de IA: si encontrar un modelo gratuito viable o si tendría que pagar. Esa indecisión bloqueó el avance.
+
+### Reality check de la IA (resuelto)
+
+- **gpt-4o-mini**: ~$0.001 por sesión generando 10 flashcards de 5000 tokens
+- **Gemini 2.0 Flash**: gratis con rate limits razonables
+- **Groq + Llama**: gratis con rate limits
+- **Claude Haiku**: barato y bueno para esto
+- Para un proyecto personal con decenas de usuarios → **céntimos al mes**
+
+El blocker no es el coste, es **prompt engineering, latencia y manejo de errores**. Eso requiere prototipo, no más debate teórico.
+
+### Pregunta fundacional sin resolver
+
+**¿Qué es una "sesión completada"?** Esto define streak, stats, calendar, todo. Opciones:
+- ¿Termina las rondas configuradas?
+- ¿Cuenta a medias si abandona?
+- ¿Mínimo de tiempo (15 min) para registrar?
+- ¿1 ronda mínima?
+
+Hasta que esto no esté contestado, el feature está mal cimentado.
+
+### Roadmap reordenado (propuesta)
+
+Javier proponía: DB → server actions → UX → vistas → MVP → IA. Reordenado a:
+
+| Fase | Qué | Coste estimado |
+|---|---|---|
+| 0 | **Prototipo IA** en `/lab/flashcards` (paralelo, no bloquea) | 30-60 min |
+| 1 | **UX en papel/Figma** del MVP | 1-2 sesiones |
+| 2 | **Schema** (`Session`: userId, startedAt, endedAt, durationMin, completed, noteIds[]) | 1 sesión |
+| 3 | **Server actions**: createSession, completeSession, getSessionsForDate, computeStreak | 1 sesión |
+| 4 | **Vistas**: selector → cronómetro → completion screen | 2 sesiones |
+| 5 | **Streak en home + lista de sesiones recientes** | 1 sesión |
+| 6 | **MVP cerrado, dogfood unas semanas** antes de añadir capas | — |
+| 7+ | Capas: templates → IA flashcards → calendar → stats avanzadas | a ritmo |
+
+Razón del reorden: la DB modela lo que la UX exige. Definir schema antes de UX lleva a refactorizar después.
+
+### MVP scope cortado agresivamente
+
+Para tener Sessions v1 funcional pronto, dejar fuera:
+- ❌ Templates (capa posterior)
+- ❌ IA / flashcards (capa posterior)
+- ❌ Calendar (capa posterior)
+- ❌ Configuración rica de sesión
+- ❌ Stats avanzadas
+
+Mantener solo:
+- ✅ Selección de notas/carpetas para la sesión
+- ✅ Pomodoro fijo (25/5, 4 rondas, sin configuración inicial)
+- ✅ Vista de sesión activa (cronómetro grande, notas accesibles, pause/end)
+- ✅ Registro al completar (timestamp, duración real, notas usadas)
+- ✅ Streak básico (día con ≥1 sesión completada cuenta)
+
+### Notas sobre streaks (cuando se llegue)
+
+Streak es droga de engagement pero también ansiedad. Duolingo perdió usuarios cuando rompían streak de 200 días por un día malo. Considerar:
+- **Días de gracia** (1-2 al mes automáticos)
+- **Pausa de viaje** (configurable manualmente)
+- **Streak congelado** durante exámenes/vacaciones
+
+Apuntar para v2 del feature, no para MVP.
+
+### Próximos pasos concretos
+
+1. **Javier contesta**: qué es "sesión completada" (un párrafo basta)
+2. **Sesión aparte**: prototipo IA en `/lab/flashcards` para validar calidad/latencia
+3. **Sesión aparte**: dibujar UX del MVP (papel sirve, Figma mejor)
+4. **Después**: schema + server actions con contexto completo
+
+---
+
+## Admin Dashboard — idea futura (post-Sessions, no urgente)
+
+Idea propuesta por Javier 2026-05-05. **No urgente** — diferida hasta que Sessions MVP esté cerrado. Se documenta aquí solo para no perder el plan.
+
+### Concepto
+
+Un panel solo accesible para Javier (admin) que agrupa tres responsabilidades:
+
+1. **Cola de moderación de feedback** — los posts del foro pasan primero por aquí. Javier aprueba/rechaza antes de que sean públicos.
+2. **Anuncios broadcast** — desde aquí Javier publica novedades, cambios, mantenimientos. Los usuarios los ven en algún sitio (campana, banner, sección dedicada).
+3. **Reconocimiento individual** — agradecer a usuarios concretos por aportaciones específicas (cuando se implementa algo que pidieron).
+
+### Cambios arquitectónicos que requiere
+
+**User**:
+- Añadir `isAdmin Boolean @default(false)` (suficiente para empezar; no hacer falta sistema de roles complejo)
+
+**FeedbackPost**:
+- Añadir `status: pending | published | rejected` (enum)
+- `getFeedbackPosts` filtra por `status: published`
+- Nuevo `getPendingFeedback` para admin
+
+**Modelo nuevo `Announcement`**:
+- `id, title, body, createdAt, authorId (admin), publishedAt`
+- Considerar `AnnouncementRead { userId, announcementId, readAt }` si se quiere tracking de leídos
+- O simplemente: timestamp de "última visita a anuncios" en el User
+
+**Rutas**:
+- `/admin` con guard de `isAdmin`
+- Middleware rechaza no-admins
+- Todas las server actions del admin verifican `session?.user?.isAdmin`
+
+**UI usuario**:
+- Indicador visible de anuncios sin leer (campana, badge, banner)
+- Mensaje "post pendiente de revisión" cuando manda feedback
+
+### Decisiones UX pendientes (cuando se llegue)
+
+- **¿Qué ve el usuario al mandar feedback?**
+  - "Pendiente de revisión" (honesto, menos satisfactorio)
+  - Post aparece como suyo solo (otros no lo ven hasta aprobar)
+  - Post-moderation: aparece publicado, admin puede despublicar después
+
+- **Agradecimientos públicos**: ¿posts especiales en foro? ¿anuncios atribuidos? ¿sección "shoutouts" propia?
+
+### Solución intermedia hasta entonces
+
+Mientras este dashboard no exista, si llega basura al foro de feedback: **borrado manual** desde la BD o desde la UI con permisos hardcoded (`if email === "javier.alcate@kuik.tech"`). Pragmático para el volumen actual de feedback (cero tráfico).

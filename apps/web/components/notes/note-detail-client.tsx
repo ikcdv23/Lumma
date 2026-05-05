@@ -3,12 +3,12 @@
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { ArrowLeft, Inbox, MoreHorizontal } from "lucide-react";
+import { ArrowLeft, Inbox } from "lucide-react";
 import type { Block, PartialBlock } from "@blocknote/core";
 import { Button } from "@/components/ui/button";
 import { SaveIndicator } from "@/components/ui/save-indicator";
+import { NoteActionsMenu } from "@/components/notes/note-actions-menu";
 import { updateNote } from "@/server/actions/notes-actions";
-import { formatRelative } from "@/lib/format-date";
 
 // BlockNote toca `window` durante el render → import dinámico sin SSR
 const NoteEditor = dynamic(
@@ -94,14 +94,11 @@ export function NoteDetailClient({ note }: { note: Note }) {
 						{note.folderId ? "Carpeta" : "Inbox"}
 					</button>
 
-					<Button
-						variant="ghost"
-						size="icon-sm"
-						aria-label="Más opciones"
-						className="-mr-2"
-					>
-						<MoreHorizontal className="size-4" />
-					</Button>
+					<NoteActionsMenu
+						noteId={note.id}
+						currentFolderId={note.folderId}
+						redirectAfterDelete={note.folderId ? `/folders/${note.folderId}` : "/inbox"}
+					/>
 				</div>
 			</header>
 

@@ -68,6 +68,7 @@ export default async function HomePage() {
 									<NoteListItem
 										id={recentNote.id}
 										title={recentNote.title}
+										folderId={recentNote.folderId}
 										folderName={recentNote.folder?.name ?? null}
 										updatedAt={recentNote.updatedAt}
 									/>

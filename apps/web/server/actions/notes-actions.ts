@@ -59,6 +59,40 @@ export async function updateNote(
 	return note;
 }
 
+export async function moveNoteToFolder(
+	noteId: string,
+	targetFolderId: string | null,
+) {
+	const session = await auth();
+	if (!session?.user?.id) return null;
+
+	// Si va a una carpeta, verificar que sea del usuario
+	if (targetFolderId) {
+		const folder = await prisma.folder.findUnique({
+			where: { id: targetFolderId, userId: session.user.id },
+			select: { id: true },
+		});
+		if (!folder) return null;
+	}
+
+	const previous = await prisma.note.findUnique({
+		where: { id: noteId, userId: session.user.id },
+		select: { folderId: true },
+	});
+	if (!previous) return null;
+
+	const note = await prisma.note.update({
+		where: { id: noteId, userId: session.user.id },
+		data: { folderId: targetFolderId },
+	});
+
+	// Revalidar origen y destino
+	revalidatePath(previous.folderId ? `/folders/${previous.folderId}` : "/inbox");
+	revalidatePath(targetFolderId ? `/folders/${targetFolderId}` : "/inbox");
+	revalidatePath("/home");
+	return note;
+}
+
 export async function deleteNote(noteId: string) {
 	const session = await auth();
 	if (!session?.user?.id) return;
