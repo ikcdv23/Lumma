@@ -130,11 +130,7 @@ export default function FastNotes({ note, userName }: FastNotesProps) {
 						<motion.div
 							layoutId="quick-note"
 							className="fixed inset-4 md:inset-8 lg:inset-16 z-50 flex flex-col rounded-2xl border bg-card shadow-2xl overflow-hidden"
-							transition={{
-								type: "spring",
-								damping: 28,
-								stiffness: 220,
-							}}
+							transition={{ duration: 0.25, ease: [0.32, 0.72, 0, 1] }}
 						>
 							{/* Header del modal */}
 							<div className="flex items-center justify-between gap-4 border-b px-6 py-4">

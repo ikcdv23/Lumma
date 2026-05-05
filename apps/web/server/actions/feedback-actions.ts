@@ -3,10 +3,13 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import z from "zod";
 
 export async function createFeedbackPost(content: string, rating: number) {
     const session = await auth();
     if (!session?.user?.id) return null;
+
+    if (content.trim() === "" || rating > 5 || rating < 1) return null
 
     const post = await prisma.feedbackPost.create({
         data: {

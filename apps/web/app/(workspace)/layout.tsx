@@ -4,6 +4,7 @@ import { Folder, Home, Inbox, LogOut, MessageSquare, User } from "lucide-react";
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { NotesSearch } from "@/components/notes/notes-search"
+import { SidebarMobileAutoClose } from "@/components/sidebar-mobile-auto-close";
 import { prisma } from "@/lib/prisma";
 import {
 	Sidebar,
@@ -31,13 +32,14 @@ export default async function WorkspaceLayout({
 	// Leer nombre fresco de la BD (el JWT no se actualiza al cambiar el perfil)
 	const dbUser = session?.user?.id
 		? await prisma.user.findUnique({
-				where: { id: session.user.id },
-				select: { name: true },
-			})
+			where: { id: session.user.id },
+			select: { name: true },
+		})
 		: null;
 	const displayName = dbUser?.name ?? session?.user?.name ?? "Usuario";
 	return (
 		<SidebarProvider defaultOpen={sidebarOpen}>
+			<SidebarMobileAutoClose />
 			<Sidebar variant="inset" suppressHydrationWarning>
 				<SidebarHeader>
 					<SidebarMenu>
@@ -121,7 +123,7 @@ export default async function WorkspaceLayout({
 					<div className="flex flex-1 justify-center">
 						<NotesSearch />
 					</div>
-				</header>	
+				</header>
 				<main className="flex flex-1 items-center justify-center">
 
 					{children}
