@@ -76,14 +76,17 @@ export default async function WorkspaceLayout({
 						</SidebarMenuItem>
 
 						<SidebarMenuItem>
-							<SidebarMenuButton size="lg">
+							<Link
+								href="/profile"
+								className={sidebarMenuButtonVariants({ size: "lg" })}
+							>
 								<User />
 								<div className="flex flex-col">
 									<span className="text-sm font-medium">
 										{session?.user?.name ?? "Usuario"}
 									</span>
 								</div>
-							</SidebarMenuButton>
+							</Link>
 						</SidebarMenuItem>
 						<SidebarMenuItem>
 							<form
