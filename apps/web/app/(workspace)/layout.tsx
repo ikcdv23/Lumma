@@ -3,6 +3,7 @@ import { auth, signOut } from "@/auth";
 import { Folder, Home, Inbox, LogOut, MessageSquare, User } from "lucide-react";
 import Link from "next/link";
 import { cookies } from "next/headers";
+import { NotesSearch } from "@/components/notes/notes-search"
 import {
 	Sidebar,
 	SidebarContent,
@@ -15,6 +16,7 @@ import {
 	SidebarProvider,
 	SidebarTrigger,
 } from "@/components/ui/sidebar";
+import { sidebarMenuButtonVariants } from "@/components/ui/sidebar-variants";
 
 export default async function WorkspaceLayout({
 	children,
@@ -41,30 +43,24 @@ export default async function WorkspaceLayout({
 					<SidebarMenu>
 
 						<SidebarMenuItem>
-							<SidebarMenuButton asChild>
-								<Link href="/home">
-									<Home />
-									Inicio
-								</Link>
-							</SidebarMenuButton>
+							<Link href="/home" className={sidebarMenuButtonVariants()}>
+								<Home />
+								Inicio
+							</Link>
 						</SidebarMenuItem>
 
 						<SidebarMenuItem>
-							<SidebarMenuButton asChild>
-								<Link href="/inbox">
-									<Inbox className="size-5" />
-									Inbox
-								</Link>
-							</SidebarMenuButton>
+							<Link href="/inbox" className={sidebarMenuButtonVariants()}>
+								<Inbox className="size-5" />
+								Inbox
+							</Link>
 						</SidebarMenuItem>
 
 						<SidebarMenuItem>
-							<SidebarMenuButton asChild>
-								<Link href="/folders">
-									<Folder className="size-5" />
-									Carpetas
-								</Link>
-							</SidebarMenuButton>
+							<Link href="/folders" className={sidebarMenuButtonVariants()}>
+								<Folder className="size-5" />
+								Carpetas
+							</Link>
 						</SidebarMenuItem>
 
 					</SidebarMenu>
@@ -73,12 +69,10 @@ export default async function WorkspaceLayout({
 				<SidebarFooter>
 					<SidebarMenu>
 						<SidebarMenuItem>
-							<SidebarMenuButton asChild>
-								<Link href="/feedback">
-									<MessageSquare className="size-5" />
-									<span className="text-muted-foreground">Feedback</span>
-								</Link>
-							</SidebarMenuButton>
+							<Link href="/feedback" className={sidebarMenuButtonVariants()}>
+								<MessageSquare className="size-5" />
+								<span className="text-muted-foreground">Feedback</span>
+							</Link>
 						</SidebarMenuItem>
 
 						<SidebarMenuItem>
@@ -95,7 +89,7 @@ export default async function WorkspaceLayout({
 							<form
 								action={async () => {
 									"use server";
-									await signOut();
+									await signOut({ redirectTo: "/login" });
 								}}
 							>
 								<SidebarMenuButton asChild>
@@ -113,8 +107,12 @@ export default async function WorkspaceLayout({
 			<SidebarInset>
 				<header className="flex h-14 items-center gap-2 border-b px-4">
 					<SidebarTrigger />
-				</header>
+					<div className="flex flex-1 justify-center">
+						<NotesSearch />
+					</div>
+				</header>	
 				<main className="flex flex-1 items-center justify-center">
+
 					{children}
 				</main>
 			</SidebarInset>

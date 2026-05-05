@@ -89,6 +89,21 @@ export async function getRecentNotes(limit: number = 10) {
 	});
 }
 
+export async function searchNotes(query: string) {
+    const session = await auth();
+    if (!session?.user?.id) return [];
+    if (!query.trim()) return [];
+
+    return await prisma.note.findMany({
+        where: {
+            userId: session.user.id,
+            title: { contains: query, mode: "insensitive" },
+        },
+        orderBy: { updatedAt: "desc" },
+        take: 20,
+    });
+}
+
 export async function getInboxCount() {
 	const session = await auth();
 	if (!session?.user?.id) return 0;

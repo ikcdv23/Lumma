@@ -1,14 +1,23 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { ArrowLeft, Inbox, MoreHorizontal } from "lucide-react";
 import type { Block, PartialBlock } from "@blocknote/core";
 import { Button } from "@/components/ui/button";
 import { SaveIndicator } from "@/components/ui/save-indicator";
-import { NoteEditor } from "@/components/notes/blocknote";
 import { updateNote } from "@/server/actions/notes-actions";
 import { formatRelative } from "@/lib/format-date";
+
+// BlockNote toca `window` durante el render → import dinámico sin SSR
+const NoteEditor = dynamic(
+	() => import("@/components/notes/blocknote").then((m) => m.NoteEditor),
+	{
+		ssr: false,
+		loading: () => <div className="my-4 h-32 animate-pulse rounded-md bg-muted/30" />,
+	},
+);
 
 type Note = {
 	id: string;
