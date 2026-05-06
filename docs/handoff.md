@@ -1,4 +1,4 @@
-# Handoff — actualizado 2026-05-04 (final del dia)
+# Handoff — actualizado 2026-05-06 (final del dia)
 
 > Documento para retomar el trabajo en otra maquina o despues de un break. Lee esto **primero**.
 
@@ -18,13 +18,25 @@ Sesiones 2026-05-01 a 2026-05-03:
 - `NewNoteButton` y `SaveFolderButton` extraidos con `useFormStatus`
 - `FolderModal` refactorizado a `<form action>`
 
-Sesion 2026-05-04 (HOY):
+Sesion 2026-05-04:
 - **Feature de feedback completa** (foro de comunidad con votos y estrellas)
 - Sidebar reorganizado (Feedback movido al footer)
 - Widths estandarizados a `max-w-5xl` en todas las paginas
 - Lección aprendida sobre `useFormStatus` (debe estar DENTRO del form)
 - **Reflexión estratégica**: descubierto competidor casi idéntico (lumanote.org)
 - **Decisión pendiente**: rebrand de Lumma o seguir como proyecto de aprendizaje
+
+Sesion 2026-05-06 (HOY):
+- **Solarium completamente diseñado** — la sección de herramientas de estudio. Mockup construido en `/sessions-mockup` con 5 pantallas (hub, new, regret, active, result) y 5 modales conectados (preview plantilla, crear plantilla, folder picker, abandon, save as template)
+- **Sistema de marca anclado**: Lumma (luz) + Luminita (IA = pequeño sol con personalidad) + clima en calendario (sol/nubes según actividad de estudio). Nuevo lenguaje: "tu cielo está despejado", "amanece", "sol pleno"
+- **3 variantes visuales** comparadas para el módulo de actividad: Cielo del día / Horizonte mensual / Constelación semanal. Decidido: A como hero + C reciclado en cards de Recientes
+- **Decisiones del modelo cerradas** (ver sección Solarium)
+- **Schema StudySession** diseñado y revisado (enum `StudySessionStatus`, `lastSeenAt` para heartbeat, `notesTouched`/`notesCreated`)
+- **Routing** decidido: `/solarium` en (workspace), `/active` (singleton, no [id]) en route group `(solariumspace)` para distraction-free
+- **Plan de implementación** en 7 fases
+- **Post de LinkedIn** redactado y publicado anunciando progreso
+- Bug del sidebar (empty `<li>` tras revalidatePath, NO era solo warning de dev) → arreglado y commiteado
+- Lección: añadir `predev: prisma generate` al package.json para evitar el bug "Prisma client desactualizado al cambiar de PC"
 
 ---
 
@@ -205,9 +217,13 @@ Tipo error: `Invalid prisma.note.count() invocation: The column 'Note.isQuickNot
 3. **ANTES de pushear**: cambiar `.env` a Neon, `pnpm prisma migrate deploy`, revertir `.env`
 4. Push
 
-### 3. Hydration warning en Sidebar
+### 3. Sidebar items vacíos tras `revalidatePath` (RESUELTO 2026-05-06)
 
-Causa: combinación Radix `Slot` + Next `<Link>` + `asChild` produce mismatch SSR/cliente. Conocido. **No tiene fix limpio**, decidimos aceptar el warning (es recoverable, solo en dev console, no afecta producción).
+Causa: combinación Radix `Slot` + Next `<Link>` + `asChild` no era solo un warning de hydration silenciable — provocaba que los `<li>` del menú quedaran VACÍOS (sin children, `clientHeight: 0`) tras `revalidatePath` (al borrar carpetas, editar notas, redimensionar imágenes, etc.). El `suppressHydrationWarning` ocultaba el síntoma pero el bug afectaba producción.
+
+**Fix aplicado**: refactorizar los menu items del sidebar para no usar `asChild` + Slot — el `<Link>` es ahora directamente el botón con sus clases inline. Adiós Slot, adiós bug.
+
+**Lección**: cuando `suppressHydrationWarning` se usa como band-aid, sigue investigando — puede estar ocultando algo serio. Y **NO es solo console noise**, también puede romper la UI en silencio.
 
 ---
 
@@ -349,17 +365,21 @@ docker compose up -d
 
 Por orden de prioridad:
 
-1. **Sessions (feature diferenciador)** — ver sección dedicada al final del handoff. Próximos pasos concretos:
-   - Definir qué es "sesión completada" (Javier)
-   - Prototipo IA en `/lab/flashcards`
-   - UX del MVP en papel/Figma
-2. **Cleanup schema**: eliminar `isQuickNote`, `autoDeleteAfterDays`, `edited`, `updatedAt` de FeedbackPost. Migración local + Neon.
-3. **Cleanup código**: borrar `home-client.tsx` huerfano, mockups si ya no sirven
-4. **Rate limiting** en server actions (CRÍTICO antes de abrir a más usuarios)
-5. **Decisión sobre rebrand**: cambiar de "Lumma" a otro nombre por el conflicto con Luma
-6. Verificación email con Mailtrap
-7. ~~Página de perfil~~ — ✅ hecha 2026-05-05
-8. ~~Validación con Zod en feedback-actions~~ — Javier optó por validación manual con `if`, decisión consciente para low-risk feature
+1. **Solarium Fase 1: Schema** — diseño cerrado, schema revisado y listo para migración.
+   - Schema StudySession ya está aplicado en `apps/web/prisma/schema.prisma` (con enum status, notesTouched/Created, lastSeenAt)
+   - Pendiente: `cd apps/web; npx prisma migrate dev --name add_study_sessions`
+   - Verificar: `npx prisma generate` actualiza el client
+2. **Solarium Fase 2: Server actions** — crear `apps/web/server/actions/solarium-actions.ts` con createSession, heartbeat, abandon, complete, getActive, getRecent, getStreak. Detalles en sección Solarium.
+3. **Solarium Fase 3-7**: ver tabla en sección Solarium. Total ~7 sesiones para MVP.
+4. **Spike IA flashcards** (paralelo, no bloquea Solarium) — `/lab/flashcards` con Gemini Flash, validar calidad y latencia
+5. **Cleanup schema**: eliminar `isQuickNote`, `autoDeleteAfterDays`, `edited`, `updatedAt` de FeedbackPost. Migración local + Neon.
+6. **Cleanup código**: borrar `home-client.tsx` huerfano, mockup `/sessions-mockup` (tras Fase 7 de Solarium)
+7. **Rate limiting** en server actions (CRÍTICO antes de abrir a más usuarios)
+8. **Decisión sobre rebrand**: cambiar de "Lumma" a otro nombre por el conflicto con Luma — sin urgencia, opción A (proyecto de aprendizaje) vigente
+9. Verificación email con Mailtrap
+10. ~~Página de perfil~~ — ✅ hecha 2026-05-05
+11. ~~Validación con Zod en feedback-actions~~ — Javier optó por validación manual con `if`, decisión consciente para low-risk feature
+12. ~~Bug del sidebar (empty `<li>` tras revalidatePath)~~ — ✅ arreglado y commiteado 2026-05-06
 
 ---
 
@@ -396,96 +416,159 @@ Esto refuerza la importancia de:
 
 ---
 
-## Sessions (antes Zen Mode) — visión y plan (2026-05-05)
+## Solarium — diseño cerrado (2026-05-06)
 
-### Replanteo del feature diferenciador
+### Identidad y naming
 
-Lo que originalmente era "Zen Mode" (aislarte con tus notas elegidas) ha evolucionado en algo más ambicioso: **Sessions**. Una sesión registrable de estudio que:
+- **Solario / Solarium** = la sección donde se compone la sesión de estudio. Engloba TODAS las herramientas: Pomodoro hoy, flashcards/quiz/resumen IA en el futuro
+- En código/URLs: `solarium` (inglés/latín, consistente con `home`, `inbox`, `folders`)
+- En UI/branding/marketing: **"Solario"** (español)
+- Patrón: code en inglés, labels en español. Igual que `home` → "Inicio"
 
-- Toma carpetas/notas elegidas previamente
-- Corre un Pomodoro configurable (estudio + descansos + rondas)
-- Muestra info en tiempo real (tiempo restante, ronda actual)
-- Integra IA para generar **flashcards o tests** a partir de los apuntes de la sesión
-- Permite configuración rica: "1 test antes, 2 rondas 30/5, 1 ronda flashcards, 30 min estudio final"
-- Soporta **plantillas** (predefinidas o creadas por el usuario)
-- Tiene **calendario** para programar/recordar días de estudio
-- Lleva **estadísticas**: racha de días, tiempo invertido, tests/flashcards respondidos
-- Streak para fomentar el hábito (bonificable con días de gracia tipo Duolingo v2)
+### Decisiones del modelo (todas cerradas)
 
-Es el feature diferenciador de Lumma vs Notion/Apple Notes/Bear. Sin esto, Lumma es una app de notas más.
+| Decisión | Valor |
+|---|---|
+| Definición "completed" | actualDuration >= targetDuration |
+| Pomodoro | Visual solo, 1 sesión = 1 unidad continua |
+| Ventana arrepentimiento | 30s antes de persistir, sin penalty |
+| Política de salida | **Humana**: tab switch SIN penalty, solo cierre real / abandonar penaliza |
+| Detección cierre | beforeunload + sendBeacon + heartbeat 30s + cleanup server side |
+| Multi-dispositivo | Una sesión activa por usuario |
+| Día del streak | Por `startedAt.toLocalDate()` del user (no UTC) |
+| Stats en abandonadas | **Sí**, se guardan study/break minutes incluso en failed (no es total loss) |
+| Sidebar durante sesión | Oculta vía route group `(solariumspace)` |
+| Goal por defecto | 60 min/día |
+| Mínimo registrable | 10 min de estudio real |
+| Cielo en tiempo real durante sesión | NO en MVP, solo timer |
 
-### Por qué se pospuso tanto (contexto)
+### Sistema de marca
 
-Javier no tenía claro la forma. La duda principal era la integración de IA: si encontrar un modelo gratuito viable o si tendría que pagar. Esa indecisión bloqueó el avance.
+- **Lumma** = luz (app)
+- **Luminita** = pequeño sol personificado, voz de la IA (resumen, flashcards, quiz). Survives rebranding del nombre principal porque no depende de "Lumma"
+- **Clima en calendario** según actividad: ☀️ sol pleno (90+min), 🌤️ sol entre nubes (50+), ⛅ sol tímido (1+), vacío (0)
+- **Failed sessions NO aparecen como lluvia** — sin metáfora punitiva. El clima refleja lo que hiciste, no lo que abandonaste
+- **Lenguaje del producto**: "tu cielo está despejado", "amanece", "sol pleno"
 
-### Reality check de la IA (resuelto)
+### Routing decidido
 
-- **gpt-4o-mini**: ~$0.001 por sesión generando 10 flashcards de 5000 tokens
+```
+app/
+├── (workspace)/
+│   └── solarium/page.tsx       ← /solarium (hub, con sidebar)
+└── (solariumspace)/
+    ├── layout.tsx               ← sin sidebar (distraction-free)
+    └── active/page.tsx         ← /active (singleton, una activa por user)
+```
+
+NO hay `/active/[id]` ni `/result/[id]`. Razón: una sesión completada **no es entidad linkeable**, es un evento del pasado que aparece como card en stats del hub. Completion se muestra como **estado interno** de `/active` (celebración + botón volver) antes de redirigir a `/solarium`.
+
+Folder vacíos ya creados pero pendientes de rellenar:
+- `apps/web/app/(workspace)/solarium/page.tsx` (vacío)
+- `apps/web/app/(solariumspace)/layout.tsx` (vacío)
+- `apps/web/app/(solariumspace)/active/page.tsx` (renombrar de `solariumActive` a `active`)
+
+### Schema final (revisado y aplicado en `schema.prisma`)
+
+```prisma
+enum StudySessionStatus {
+  ACTIVE
+  COMPLETED
+  ABANDONED
+}
+
+model StudySession {
+  id       String  @id @default(uuid())
+  userId   String
+  user     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  folderId String?
+  folder   Folder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
+
+  startedAt  DateTime  @default(now())
+  endedAt    DateTime?
+  lastSeenAt DateTime  @default(now())   // heartbeat
+
+  targetMinutes Int
+  studyMinutes  Int @default(0)          // focus real
+  breakMinutes  Int @default(0)          // descanso Pomodoro
+
+  status StudySessionStatus @default(ACTIVE)
+
+  notesTouched String[]                   // notas abiertas durante la sesión
+  notesCreated String[]                   // notas creadas durante la sesión
+
+  @@index([userId, startedAt])
+  @@index([userId, status])               // para "tienes activa?"
+}
+```
+
+Añadir en `User`: `studySessions StudySession[]`. Añadir en `Folder`: `studySessions StudySession[]`.
+
+**Cambios respecto a versión anterior**:
+- Replaced `completed` + `abandoned` booleans (estados inválidos posibles) con enum `StudySessionStatus`
+- Eliminado `createdAt` redundante con `startedAt`
+- Añadido `notesCreated` separado (mockup mostraba "3 revisadas · 1 nueva", son métricas distintas)
+- Segundo índice por `[userId, status]` para query frecuente
+
+### Plan de implementación (7 fases)
+
+| Fase | Qué | Estimado | Estado |
+|---|---|---|---|
+| 0 | Defaults rápidos (decisiones pendientes) | 5 min | ✅ hecho |
+| 1 | Schema StudySession + migración | 1 sesión | ⏳ pendiente |
+| 2 | Server actions (createSession, heartbeat, abandon, complete, getActive, getRecent, getStreak) | 1 sesión | ⏳ |
+| 3 | Hub real `/solarium` con datos de DB | 1 sesión | ⏳ |
+| 4 | Crear sesión real `/solarium/new` | 1 sesión | ⏳ |
+| 5 | Sesión activa `/active` con timer, heartbeat, beforeunload | 2 sesiones (la más densa) | ⏳ |
+| 6 | Result interno (estado de /active) con celebración | media sesión | ⏳ |
+| 7 | Borrar mockup `/sessions-mockup` + sidebar item nuevo "Solario" entre Inicio e Inbox | media sesión | ⏳ |
+
+**Total**: ~7 sesiones reales hasta MVP cerrado.
+
+### MVP scope (cortado agresivamente)
+
+✅ Mantener:
+- Selección de carpeta + duración (chips 25/50/90)
+- Una sesión continua (Pomodoro = visual)
+- Heartbeat + detección cierre
+- Stats save siempre (completed o abandoned)
+- Streak por día con sesiones completed
+- Sub-sidebar de notas durante sesión activa
+- Crear/editar notas durante sesión
+
+❌ Fuera del MVP:
+- Plantillas funcionales (mockeadas hardcoded)
+- Sistema crear plantilla con builder
+- IA / Luminita / Flashcards
+- Cielo cambia en tiempo real durante sesión
+- Compartir plantillas
+- Sesiones grupales
+
+### Reality check de la IA (siguen vigentes)
+
 - **Gemini 2.0 Flash**: gratis con rate limits razonables
-- **Groq + Llama**: gratis con rate limits
-- **Claude Haiku**: barato y bueno para esto
-- Para un proyecto personal con decenas de usuarios → **céntimos al mes**
+- **Groq + Llama 3**: gratis con rate limits
+- **Claude Haiku**: barato y bueno
+- Para proyecto personal con decenas de users → **céntimos al mes**
 
-El blocker no es el coste, es **prompt engineering, latencia y manejo de errores**. Eso requiere prototipo, no más debate teórico.
-
-### Pregunta fundacional sin resolver
-
-**¿Qué es una "sesión completada"?** Esto define streak, stats, calendar, todo. Opciones:
-- ¿Termina las rondas configuradas?
-- ¿Cuenta a medias si abandona?
-- ¿Mínimo de tiempo (15 min) para registrar?
-- ¿1 ronda mínima?
-
-Hasta que esto no esté contestado, el feature está mal cimentado.
-
-### Roadmap reordenado (propuesta)
-
-Javier proponía: DB → server actions → UX → vistas → MVP → IA. Reordenado a:
-
-| Fase | Qué | Coste estimado |
-|---|---|---|
-| 0 | **Prototipo IA** en `/lab/flashcards` (paralelo, no bloquea) | 30-60 min |
-| 1 | **UX en papel/Figma** del MVP | 1-2 sesiones |
-| 2 | **Schema** (`Session`: userId, startedAt, endedAt, durationMin, completed, noteIds[]) | 1 sesión |
-| 3 | **Server actions**: createSession, completeSession, getSessionsForDate, computeStreak | 1 sesión |
-| 4 | **Vistas**: selector → cronómetro → completion screen | 2 sesiones |
-| 5 | **Streak en home + lista de sesiones recientes** | 1 sesión |
-| 6 | **MVP cerrado, dogfood unas semanas** antes de añadir capas | — |
-| 7+ | Capas: templates → IA flashcards → calendar → stats avanzadas | a ritmo |
-
-Razón del reorden: la DB modela lo que la UX exige. Definir schema antes de UX lleva a refactorizar después.
-
-### MVP scope cortado agresivamente
-
-Para tener Sessions v1 funcional pronto, dejar fuera:
-- ❌ Templates (capa posterior)
-- ❌ IA / flashcards (capa posterior)
-- ❌ Calendar (capa posterior)
-- ❌ Configuración rica de sesión
-- ❌ Stats avanzadas
-
-Mantener solo:
-- ✅ Selección de notas/carpetas para la sesión
-- ✅ Pomodoro fijo (25/5, 4 rondas, sin configuración inicial)
-- ✅ Vista de sesión activa (cronómetro grande, notas accesibles, pause/end)
-- ✅ Registro al completar (timestamp, duración real, notas usadas)
-- ✅ Streak básico (día con ≥1 sesión completada cuenta)
+Blocker no es coste, es **prompt engineering, latencia y manejo de errores**. Spike pendiente en `/lab/flashcards` (paralelo, no bloquea Solarium MVP).
 
 ### Notas sobre streaks (cuando se llegue)
 
-Streak es droga de engagement pero también ansiedad. Duolingo perdió usuarios cuando rompían streak de 200 días por un día malo. Considerar:
+Streak es droga de engagement pero también ansiedad. Duolingo perdió usuarios al romper streak de 200 días. Considerar para v2:
 - **Días de gracia** (1-2 al mes automáticos)
 - **Pausa de viaje** (configurable manualmente)
 - **Streak congelado** durante exámenes/vacaciones
 
 Apuntar para v2 del feature, no para MVP.
 
-### Próximos pasos concretos
+### Mockup actual
 
-1. **Javier contesta**: qué es "sesión completada" (un párrafo basta)
-2. **Sesión aparte**: prototipo IA en `/lab/flashcards` para validar calidad/latencia
-3. **Sesión aparte**: dibujar UX del MVP (papel sirve, Figma mejor)
-4. **Después**: schema + server actions con contexto completo
+Vive en `apps/web/app/(workspace)/sessions-mockup/`. Construido con `_components/` para los modales. **Borrar entera tras Fase 7**. Sirve como referencia visual durante implementación. URL: `/sessions-mockup`.
+
+### Idea social diferida (no urgente)
+
+Discutida 2026-05-06: Lumma podría tener visibilidad entre usuarios para "ver amigos estudiando", sesiones grupales, compartir notas read-only. **Decidido NO añadir al schema actual** — YAGNI. Cuando llegue el momento, refactor con modelos `Friendship/Follow` y permission system. Por ahora schema "personal", refactorizar después si la network effect aparece.
 
 ---
 

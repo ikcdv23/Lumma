@@ -3,7 +3,6 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-import z from "zod";
 
 export async function createFeedbackPost(content: string, rating: number) {
     const session = await auth();
@@ -59,7 +58,7 @@ export async function toggleFeedbackVote(postId: string) {
     const session = await auth();
     if (!session?.user?.id) return null;
 
-    const existing = await prisma.feedbackVote.findUnique({
+    const existing = await prisma.feedbackPost.findUnique({
         where: {
             userId_postId: {
                 userId: session.user.id,
@@ -69,7 +68,7 @@ export async function toggleFeedbackVote(postId: string) {
     });
 
     if (existing) {
-        await prisma.feedbackVote.delete({
+        await prisma.feedbackPost.delete({
             where: {
                 userId_postId: {
                     userId: session.user.id,
@@ -78,7 +77,7 @@ export async function toggleFeedbackVote(postId: string) {
             },
         });
     } else {
-        await prisma.feedbackVote.create({
+        await prisma.feedbackPost.create({
             data: {
                 userId: session.user.id,
                 postId,
