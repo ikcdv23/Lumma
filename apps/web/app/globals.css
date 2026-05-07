@@ -127,3 +127,72 @@
     @apply font-sans;
     }
 }
+
+/* ============================================================
+   BlockNote — bloques de codigo en tonos claros
+   El default es #161616 (negro) con texto blanco. Lo cambiamos a
+   un fondo gris claro para integrarse con el tema de la app.
+   El syntax highlighting viene de Shiki con github-light.
+============================================================ */
+.bn-block-content[data-content-type="codeBlock"] {
+  background-color: oklch(0.97 0.005 240) !important;
+  color: oklch(0.2 0.01 240) !important;
+  border: 1px solid oklch(0.92 0.005 240) !important;
+  padding-top: 8px !important;
+}
+
+/* El <pre> con el codigo */
+.bn-block-content[data-content-type="codeBlock"] > pre {
+  color: oklch(0.2 0.01 240) !important;
+}
+
+/* ============================================================
+   BlockNote — selector de lenguaje (pill arriba a la derecha)
+============================================================ */
+.bn-block-content[data-content-type="codeBlock"] > div > select {
+  /* posicion: top-right */
+  top: 10px !important;
+  left: auto !important;
+  right: 12px !important;
+
+  /* siempre visible */
+  opacity: 1 !important;
+  transition: background-color 0.15s ease, color 0.15s ease, transform 0.15s ease !important;
+  transition-delay: 0s !important;
+
+  /* aspecto pill, tonos claros */
+  padding: 4px 22px 4px 10px !important;
+  border-radius: 9999px !important;
+  background-color: oklch(1 0 0 / 0.7) !important;
+  color: oklch(0.4 0.01 240) !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.02em !important;
+  line-height: 1.2 !important;
+  border: 1px solid oklch(0.88 0.005 240) !important;
+
+  /* chevron custom */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 8px center !important;
+  background-size: 10px !important;
+  appearance: none !important;
+  -webkit-appearance: none !important;
+}
+
+.bn-block-content[data-content-type="codeBlock"] > div > select:hover {
+  background-color: oklch(1 0 0) !important;
+  color: oklch(0.2 0.01 240) !important;
+  transform: translateY(-1px) !important;
+  border-color: oklch(0.82 0.005 240) !important;
+}
+
+.bn-block-content[data-content-type="codeBlock"] > div > select:focus-visible {
+  outline: 2px solid oklch(0.6 0.18 250 / 0.5) !important;
+  outline-offset: 1px !important;
+}
+
+.bn-block-content[data-content-type="codeBlock"] > div > select > option {
+  background-color: oklch(1 0 0) !important;
+  color: oklch(0.2 0.01 240) !important;
+}
