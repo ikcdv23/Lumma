@@ -537,3 +537,53 @@ Un panel solo accesible para Javier (admin) que agrupa tres responsabilidades:
 ### Solución intermedia hasta entonces
 
 Mientras este dashboard no exista, si llega basura al foro de feedback: **borrado manual** desde la BD o desde la UI con permisos hardcoded (`if email === "javier.alcate@kuik.tech"`). Pragmático para el volumen actual de feedback (cero tráfico).
+
+---
+
+## ⚠️ Pendiente: drift de schema en Neon tras revert de Solarium (2026-05-07)
+
+### Contexto
+
+El 2026-05-07 por la mañana, Javier había pusheado a `dev` el commit `0344867` con toda la feature Solarium (incluyendo migración `20260506135432_add_study_sessions`). Ese commit rompía el deploy de Vercel y bloqueaba poder hacer fixes rápidos.
+
+**Resolución aplicada**:
+1. Trabajo Solarium preservado en rama nueva `feature/solarium` (pusheada a remoto)
+2. En `dev`: `git revert 0344867` → commit `59f0d8e` que deshace los 21 archivos del Solarium, incluido el archivo de migración SQL
+3. Push a `dev` → Vercel re-deploya limpio
+
+### El problema latente
+
+El `revert` borró el archivo `apps/web/prisma/migrations/20260506135432_add_study_sessions/migration.sql` de la rama `dev`. **Si esa migración ya se había aplicado a Neon (producción)**, ahora hay desajuste:
+
+- Neon tiene la tabla `StudySession` creada (con su enum, índices, etc.)
+- `dev` ya no tiene la migración que la creó
+- Prisma no sabe que esa tabla "ya existe" porque no hay rastro en `_prisma_migrations`... bueno, depende: si la migración fue marcada como aplicada, Neon recordará que se aplicó la `20260506135432_add_study_sessions` aunque ya no exista el archivo
+
+### No bloquea nada hoy
+
+El código revertido **NO referencia `StudySession`**. Vercel deploya, la app funciona, los usuarios no notan nada. La tabla huérfana en Neon no rompe nada por sí misma.
+
+### Cómo comprobar si se aplicó a Neon
+
+Desde `apps/web/`:
+
+```bash
+# Editar .env temporalmente para apuntar a DATABASE_URL de Neon
+# Luego:
+pnpm prisma migrate status
+```
+
+Si el output incluye `20260506135432_add_study_sessions` como aplicada → **sí se aplicó**, drift confirmado.
+Si dice "no migrations found" o lista solo las anteriores → no se aplicó, todo limpio.
+
+### Opciones cuando se ataque (no urgente)
+
+**Caso A: NO se aplicó a Neon** → cero problema. La migración existe solo en `feature/solarium`. Cuando se mergee, se aplica normal.
+
+**Caso B: SÍ se aplicó a Neon** → opciones:
+1. **Rollback en Neon**: `DROP TABLE "StudySession"; DROP TYPE "StudySessionStatus"; DELETE FROM "_prisma_migrations" WHERE migration_name = '20260506135432_add_study_sessions';` — vuelves al estado pre-Solarium en BD.
+2. **Marcar como ya-aplicada al volver**: cuando mergees `feature/solarium` a dev, ejecutar `pnpm prisma migrate resolve --applied 20260506135432_add_study_sessions` apuntando a Neon. Le dice a Prisma "esto ya está hecho, no lo intentes aplicar".
+
+### Recomendación
+
+Antes de retomar `feature/solarium`, comprobar el estado de Neon (1 minuto). Decidir Caso A o B. Resolver. Continuar.

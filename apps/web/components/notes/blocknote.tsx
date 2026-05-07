@@ -24,7 +24,7 @@ export function NoteEditor({
 			editor={editor}
 			theme={theme}
 			onChange={() => onChange(editor.document)}
-			className="my-4 [--bn-font-family:inherit] [&_.bn-editor]:text-black! [&_.bn-editor_*]:text-black!"
+			className="my-4 [--bn-font-family:inherit]"
 		/>
 	);
 }
