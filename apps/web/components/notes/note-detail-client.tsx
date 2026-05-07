@@ -104,7 +104,7 @@ export function NoteDetailClient({ note }: { note: Note }) {
 
 			{/* Body con scroll independiente */}
 			<div className="flex-1 overflow-auto">
-				<div className="mx-auto w-full max-w-3xl px-6 py-10 md:px-10 md:py-16">
+				<div className="mx-auto w-full max-w-4xl px-6 py-10 md:px-10 md:py-16">
 					<input
 						type="text"
 						value={title}
