@@ -2,9 +2,10 @@
 
 import bcrypt from "bcrypt";
 import { revalidatePath } from "next/cache";
-import { auth } from "@/auth";
+import { auth, signOut } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import {
+	deleteAccountSchema,
 	updateNameSchema,
 	updatePasswordSchema,
 } from "@/schemas/user.schema";
@@ -99,4 +100,37 @@ export async function updatePassword(formData: FormData) {
 	});
 
 	return { success: true };
+}
+
+export async function deleteAccount(formData: FormData) {
+	const session = await auth();
+	if (!session?.user?.id) return { error: "No autenticado" };
+
+	const parsed = deleteAccountSchema.safeParse({
+		password: formData.get("password") ?? "",
+		confirmation: formData.get("confirmation") ?? "",
+	});
+
+	if (!parsed.success) {
+		return { error: parsed.error.issues[0]?.message ?? "Datos invalidos" };
+	}
+
+	const user = await prisma.user.findUnique({
+		where: { id: session.user.id },
+		select: { password: true },
+	});
+
+	if (!user) return { error: "Usuario no encontrado" };
+
+	if (user.password) {
+		if (!parsed.data.password) {
+			return { error: "Debes introducir tu contraseña actual" };
+		}
+		const valid = await bcrypt.compare(parsed.data.password, user.password);
+		if (!valid) return { error: "Contraseña incorrecta" };
+	}
+
+	await prisma.user.delete({ where: { id: session.user.id } });
+
+	await signOut({ redirectTo: "/login" });
 }
