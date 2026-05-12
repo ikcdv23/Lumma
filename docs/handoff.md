@@ -1,4 +1,4 @@
-# Handoff — actualizado 2026-05-11 (final del dia)
+# Handoff — actualizado 2026-05-12 (mañana)
 
 > Documento para retomar el trabajo en otra maquina o despues de un break. Lee esto **primero**.
 
@@ -79,6 +79,34 @@ Sesion 2026-05-11 (HOY):
 - **Componente `dropdown-menu` instalado** (previamente)
 - Bug recurrente del Slot + Link + asChild: ahora también aplica a `CollapsibleTrigger asChild + SidebarMenuButton`. Solución universal: usar la variante directa sobre `<button>` o `<Link>` plano, sin componentes intermedios que también usen Slot
 - Bug Prisma cliente stale (column `Note.isQuickNote` does not exist) → `pnpm prisma generate` + restart dev. Habría que añadir `predev: prisma generate` al package.json
+
+Sesion 2026-05-12 (HOY):
+- **Refactor a clean architecture de 3 capas** en Solarium — el más importante del día educativamente:
+  - `server/solarium/solarium.repository.ts` — 7 funciones de acceso a datos (find/create/update/delete), filtrando siempre por `userId`. Cero auth, cero lógica de negocio
+  - `server/solarium/solarium.service.ts` — 7 funciones de lógica de negocio (idempotencia en `createSession`, lazy cleanup en `getActiveSession`, algoritmo de streak en `getStreak`). Recibe `userId`, llama al repo, lanza errores tipados cuando hace falta
+  - `server/solarium/solarium-actions.ts` — 4 mutaciones (`createSessionAction`, `heartbeatAction`, `abandonSessionAction`, `completeSessionAction`) finas. Solo `auth()` + llamada a service + `revalidatePath`. Las 3 lecturas se eliminan de actions — los Server Components llaman directo al service
+  - Helper `getAuthedUserId` extraído en `lib/auth-helpers.ts` (pendiente, ahora vive en actions)
+  - Patrón aprendido: services **no se llaman entre sí**. La orquestación cross-feature se hace en la action o en una capa superior. Cross-feature READ se hace contra el repository de la otra feature, nunca contra su service
+  - Concepto de "tela de araña de dependencias" (dependency web) interiorizado tras conversación con senior
+- **Fase 3 cerrada**: `solarium/page.tsx` enchufada con datos reales (`getRecentSessions`, `getStreak`) vía `Promise.all`. Helper `formatWhen()` añadido para fechas relativas en español. `TODAY_MINUTES` sigue mock con TODO (falta `getTodayStudyMinutes(userId)`).
+- **Documento de referencia creado**: `docs/concepts/arquitectura.md` — guía consulta de las 3 capas, comunicación entre ellas, antipatrones, indicadores visuales rápidos, "test del cron", convenciones de nombrado. Pensado para consultar sin tener que reaprender.
+- **Estudio del proyecto profesional Fabrika** en `/home/javier/Proyectos/Fabrika/` para extraer patrones reales de empresa madura. Conclusión: aplicar la versión "right-sized" (3 capas planas por feature) — Fabrika tiene capa `useCase/` separada pero sería overkill para Lumma hoy. En Lumma, las Server Actions cumplen ese rol.
+- **Decisiones UX para Solarium MVP cerradas** (ver sección dedicada abajo):
+  - CTA del hub: **"Empezar a estudiar"** (no "Iniciar sesión", choca con auth)
+  - **NO existe "Reanudar"** — filosofía Zen estricta: si entras te quedas, si te vas la sesión se cierra (los minutos cuentan, sin penalty)
+  - **Popup de abandono** en `/active` cuando intentes navegar fuera (Fase 5)
+  - **Solarium** elegido sobre "Solario" (consistencia código-UI). Reconocida deuda de branding global (Home/Inicio, Folder/Carpetas) → ticket aparte
+  - Recent sessions **siguen clickables** (cursor-pointer intencional) — futura "ficha técnica" de sesión
+  - Excluir sesiones ACTIVE de `findRecentByUser`
+  - Streak=0 → ocultar pill o copy motivadora (pendiente decidir)
+  - `/active` timer: patrón **"30 min restantes / 30 de 60 hechos"** (motivación + contexto, estilo Apple Activity Rings)
+- **Lumma es desktop-first**, mobile responsive no es prioridad. Aceptado.
+- **Coherencia visual cross-feature** (radios, espaciado, tipografía, idioma UI) → diferida a "Rebranding pass" post-Solarium MVP, ticket separado
+- **Email reset (forgot password) diferido**: necesita dominio propio + provider (Resend recomendado, free tier 3.000/mes). Sin dominio aún, en standby
+- **Rama paralela `feature/LUMMA-02-Change-password` mergeada via PR #1**:
+  - Descubierto que el cambio de contraseña **ya estaba implementado** en `dev` (action `updatePassword` + form + sección en `/profile`)
+  - Implementado **eliminar cuenta** con confirmación: `deleteAccountSchema` (requiere literal `"ELIMINAR"`), action `deleteAccount` (verifica password si es credentials, cascade automático del schema, signOut+redirect), componente `profile-delete-form.tsx` con `Dialog`, sección "Zona peligrosa" en perfil
+  - PR creado: https://github.com/ikcdv23/Lumma/pull/1 (target `dev`)
 
 ---
 
@@ -189,25 +217,45 @@ model Note {
 - `/folders` y `/folders/[folderId]` con breadcrumbs
 - `/notes/[noteId]` editor BlockNote con code blocks claros (14 lenguajes via Shiki) y kebab menu
 - `/feedback` foro completo con votos y estrellas
-- `/profile` perfil completo (avatar, nombre editable, cambio de contraseña)
-- `/solarium` hub estético (mock data, falta enchufar server actions)
-- `/sessions-mockup/sky-states` mockup comparativo de fases del cielo + low detail
-- Server actions de Solarium completas (no enchufadas a UI todavía)
+- `/profile` perfil completo (avatar, nombre editable, cambio de contraseña, eliminar cuenta con confirmación — en PR #1, pendiente merge)
+- `/solarium` hub **funcional con datos reales** (recent sessions + streak desde DB, solo TODAY_MINUTES sigue mock)
+- `/sessions-mockup/sky-states` mockup comparativo de fases del cielo + low detail (a borrar en Fase 7)
+- **3 capas de Solarium** (`server/solarium/`) — repository + service + actions limpias, patrón documentado en `docs/concepts/arquitectura.md`
 - Sidebar pulido con header brand, grupo colapsable, user dropdown footer
 - Despliegue Vercel + Neon
 
 ### ⏳ A medio terminar (Solarium)
 
-- **Fase 3 (hub)**: estética hecha, falta enchufar `getActiveSession`, `getStreak`, `getRecentSessions` y crear `getTodayStudyMinutes`. La página tiene constantes mock con TODO marcado.
-- **Fase 4**: `/solarium/new/page.tsx` vacío
-- **Fase 5**: `(solariumspace)/layout.tsx` y `/active/page.tsx` vacíos (la más densa: timer, heartbeat, beforeunload)
-- **Fase 6**: result interno (estado de /active con celebración)
-- **Fase 7**: borrar `/sessions-mockup` entero + añadir item "Solario" definitivo al sidebar (ya existe en collapsible "Herramientas" → "Área de estudio")
+- **Fase 3 (hub)**: ✅ enchufada a datos reales 2026-05-12. Pendiente solo: crear `getTodayStudyMinutes(userId)` para reemplazar la constante `TODAY_MINUTES = 0`. Patrón sugerido: `prisma.studySession.aggregate({ _sum: { studyMinutes: true } })` filtrando por `startedAt >= startOfDay` y status != ACTIVE
+- **Fase 4**: `/solarium/new/page.tsx` vacío — selector carpeta + chips duración (25/50/90) + botón "Empezar a estudiar"
+- **Fase 5**: `(solariumspace)/layout.tsx` y `/active/page.tsx` vacíos. La más densa:
+  - Timer con patrón "X min restantes / X de Y hechos"
+  - Heartbeat client cada 30-60s
+  - `beforeunload` + `sendBeacon` para detección de cierre
+  - **Popup de abandono custom** para navegación interna (sidebar clicks, etc.) con `AlertDialog` + navigation guard
+  - Estado de pausa/resume interno
+- **Fase 6**: result interno (estado de /active con celebración) antes de redirigir al hub
+- **Fase 7**: borrar `/sessions-mockup` entero + revisar item "Solarium" definitivo al sidebar
+
+### 🧹 Cleanup pendiente pre-Fase 4 (Tier 1 UX — ~25 min)
+
+1. Renombrar CTA "Iniciar sesión" → **"Empezar a estudiar"** en `solarium/page.tsx`
+2. Añadir TODO comment en `RecentSessionCard` sobre futura ficha técnica clickable
+3. Revisar todas las menciones de "Solario" en UI → cambiar a "Solarium"
+4. Excluir status ACTIVE de `findRecentByUser` en repo (`where: { userId, status: { not: "ACTIVE" } }`)
+5. Decidir y aplicar comportamiento de streak=0 (ocultar pill vs. copy motivadora)
+6. Mover `getAuthedUserId` de `solarium-actions.ts` a `lib/auth-helpers.ts`
+7. Borrar `app/(workspace)/debug/page.tsx` (página temporal de debug del refactor)
+8. Borrar `server/actions/solarium-actions.ts` viejo (el de la ubicación antigua, si aún existe)
+9. Renombrar `solarium-actions.ts` → `solarium.actions.ts` (consistencia con `.service.ts`, `.repository.ts`)
 
 ### ❌ Sin empezar / pendiente
 
 - Rate limiting en server actions (CRÍTICO si abres a usuarios reales)
 - Verificación email con Mailtrap (plan en `auth-with-password.md`)
+- **Email reset password** — Resend recomendado, free tier 3.000/mes, requiere dominio propio. En standby hasta tener dominio
+- **Ticket: Rebranding pass post-Solarium** — coherencia visual cross-feature: tipografía/spacing/radios consistentes, idioma UI (todo español o todo inglés, decidir), paleta de colores cross-feature, rebrand sidebar
+- **Ticket: ficha técnica de sesión** — `RecentSessionCard` hoy es decorativo. Futura ruta `/solarium/sessions/[id]` con detalle: cuándo empezó, cuándo terminó, qué notas tocó, qué notas creó, duración real vs target. Mantener el `cursor-pointer` en las cards es señal preparada para esto
 - Auto-delete de notas (campo eliminado del schema en cleanup)
 - **Logo profesional** — actualmente placeholder `Sparkles` amarillo en pill gradient. Cuando se cierre Solarium MVP, contratar diseñador / generar con IA / iterar en Figma
 - **Active route highlighting** en sidebar (requiere convertir parte a Client Component con `usePathname()`)
@@ -216,6 +264,54 @@ model Note {
 - Spike `/lab/flashcards` para validar IA (paralelo, no bloquea Solarium MVP)
 - Cleanup: borrar `home-client.tsx` huerfano si sigue ahí
 - **Modales de confirmación para acciones destructivas** — actualmente las eliminaciones (nota, carpeta, post de feedback, futuras de sesión) usan `window.confirm()` nativo del navegador. Pendiente reemplazar por `AlertDialog` de shadcn (`pnpm dlx shadcn@latest add alert-dialog`). Sitios afectados: `components/notes/note-actions-menu.tsx`, eliminar carpeta en `folder-actions`, eliminar post de feedback. Mejora la UX y permite mostrar info contextual ("vas a eliminar 12 notas dentro de esta carpeta", etc.)
+
+---
+
+## Reglas UX cerradas para Solarium MVP (2026-05-12)
+
+Decididas conscientemente tras auditoría de UX. Aplicar en Fases 4-6.
+
+### Filosofía global
+
+**Solarium es Zen Mode estricto**. Una vez entras a una sesión, te quedas hasta el final, o te vas y la sesión se cierra. No hay "pausar y reanudar entre tabs". El tiempo estudiado SIEMPRE cuenta — sin penalty por abandonar.
+
+> Si has elegido tu plan, notas, herramientas, tiempo... ¿qué se te ha perdido fuera de tu lugar de estudio? La app te ayuda a concentrarte, no a multitarea.
+
+### Estados del hub (`/solarium`)
+
+| Situación | Comportamiento |
+|---|---|
+| Sin sesión activa | CTA "Empezar a estudiar" → `/solarium/new` |
+| Con sesión ACTIVE (caso edge) | NO se llega aquí normalmente. Si pasa: redirect a `/active`. NUNCA mostrar botón "Reanudar" |
+| Sesiones recientes | Solo COMPLETED y ABANDONED (excluir ACTIVE). Cards clickables (cursor-pointer intencional para futura ficha técnica) |
+| Streak = 0 | Ocultar pill o cambiar copy a motivadora (pendiente decidir) |
+
+### Página activa (`/active`) — Fase 5
+
+| Aspecto | Decisión |
+|---|---|
+| Layout | Sin sidebar (route group `(solariumspace)`) |
+| Cierre de pestaña / refresh | `beforeunload` nativo del navegador + `sendBeacon` a `abandonSessionAction` |
+| Navegación interna (Link, sidebar) | **Popup custom de confirmación** con `AlertDialog` de shadcn + navigation guard via `useRouter` |
+| Copy del popup | "¿Seguro que quieres romper la sesión? Llevas X min" |
+| Si confirma | `abandonSessionAction(sessionId, studyMinutes, breakMinutes)` → libre para navegar |
+| Si cancela | Sigue en `/active` |
+| Lazy cleanup backend | Si lastSeenAt > 2 min, `getActiveSession` marca como ABANDONED (red flaky, navegador cerrado sin beacon) |
+| Display del timer | "30 min restantes" (grande) + "30 de 60 hechos" (debajo, contexto) — patrón Apple Activity Rings |
+
+### Naming consistente
+
+- En código y URLs: `solarium` (inglés)
+- En UI: **"Solarium"** (decidido sobre "Solario")
+- Deuda asumida: el resto de la app mezcla idiomas (Home/Inicio, Folder/Carpetas). Se resolverá en el ticket de Rebranding pass
+
+### Lo que NO está en MVP
+
+- ❌ Botón "Reanudar"
+- ❌ Pausa explícita dentro de la sesión (Pomodoro es visual solo)
+- ❌ Multi-tab con misma sesión
+- ❌ Edición de duración a mitad
+- ❌ Modo móvil optimizado (desktop-first, móvil acepta degradar)
 
 ---
 
@@ -458,25 +554,44 @@ docker compose up -d
 
 Por orden de prioridad:
 
-1. **Solarium Fase 3 — enchufar datos al hub**: la página `/solarium/page.tsx` tiene la estética terminada con mock data. Hay que reemplazar las 3 constantes (`TODAY_MINUTES`, `STREAK`, `recentSessions`) por llamadas a las server actions ya existentes (`getStreak()`, `getRecentSessions(10)`, etc). Convertir el componente en `async function` y hacer `Promise.all`. Además crear `getTodayStudyMinutes()` (no existe aún — patrón sugerido: `prisma.studySession.aggregate({ ..., _sum: { studyMinutes: true } })` filtrando por `startedAt >= startOfDay` y status no ACTIVE). Conectar el `SkyToday` picker para que use minutos reales.
-2. **Solarium Fase 4 — `/solarium/new`**: archivo creado pero vacío. Necesita selector de carpeta + chips de duración (25/50/90) + botón "empezar" que llame `createSession` y redirija a `/active`.
-3. **Solarium Fase 5 — sesión activa** (la más densa, ~2 sesiones de trabajo):
-   - `(solariumspace)/layout.tsx` vacío — layout sin sidebar (distraction-free)
-   - `(solariumspace)/active/page.tsx` vacío — timer grande, sub-sidebar de notas, botones abandon/complete
-   - Necesario: heartbeat client cada 30s, `beforeunload + sendBeacon`, lazy cleanup ya implementado en `getActiveSession`
-4. **Solarium Fase 6 — Result interno**: estado de celebración dentro de `/active` antes de redirigir
-5. **Solarium Fase 7 — Cleanup**:
+1. **Cleanup Tier 1 UX de Solarium** (~25 min, alto retorno):
+   - Renombrar CTA "Iniciar sesión" → "Empezar a estudiar"
+   - Excluir status ACTIVE de `findRecentByUser` en repo
+   - Streak=0 → ocultar pill o copy motivadora
+   - Revisar todas las menciones de "Solario" → "Solarium" en UI
+   - Comentario TODO en `RecentSessionCard` sobre futura ficha técnica
+   - Mover `getAuthedUserId` de `solarium-actions.ts` a `lib/auth-helpers.ts`
+   - Borrar `app/(workspace)/debug/page.tsx`
+   - Borrar `server/actions/solarium-actions.ts` viejo si aún existe
+   - Renombrar `solarium-actions.ts` → `solarium.actions.ts`
+2. **Crear `getTodayStudyMinutes(userId)`** en repo + service para enchufar `TODAY_MINUTES`. Patrón: `prisma.studySession.aggregate({ _sum: { studyMinutes: true } })` filtrando por `startedAt >= startOfDay` y `status != ACTIVE`
+3. **Solarium Fase 4 — `/solarium/new`**: archivo creado vacío. Selector de carpeta + chips duración (25/50/90 min) + botón "Empezar a estudiar" que llame `createSessionAction` y redirija a `/active`. Pending state con `useFormStatus`. Patrón ya documentado.
+4. **Solarium Fase 5 — sesión activa** (la más densa, ~2 sesiones de trabajo):
+   - `(solariumspace)/layout.tsx` vacío — layout sin sidebar
+   - `(solariumspace)/active/page.tsx` vacío — timer grande con patrón "X min restantes / X de Y hechos"
+   - Heartbeat client cada 30-60s
+   - `beforeunload` + `sendBeacon` para cierre/refresh
+   - **Popup custom de abandono** (`AlertDialog` shadcn) para navegación interna (sidebar, Link). Necesita navigation guard con `useRouter`
+   - Lazy cleanup ya implementado en `solarium.service.getActiveSession`
+5. **Solarium Fase 6 — Result interno**: estado de celebración dentro de `/active` antes de redirigir
+6. **Solarium Fase 7 — Cleanup final**:
    - Borrar `app/(workspace)/sessions-mockup/` completo
-   - El item "Solario" ya existe en el sidebar dentro del grupo "Herramientas" — comprobar si quieres dejarlo así o moverlo a un nivel superior
-6. **Spike IA flashcards** (paralelo, no bloquea Solarium) — `/lab/flashcards` con Gemini Flash, validar calidad y latencia
-7. **Logo profesional** — pendiente desde 2026-05-11. Cuando Solarium MVP esté cerrado: contratar diseñador / generar con IA / iterar en Figma. Placeholder actual: pill amarilla gradient con icono Sparkles en `(workspace)/layout.tsx`
-8. **Verificar drift Neon** (sección "drift de schema en Neon"). Si la migración `add_study_sessions` se aplicó a Neon antes del revert, hay que decidir si rollback o `prisma migrate resolve --applied`
-9. **Active route highlighting** en sidebar (requiere convertir parte del sidebar a Client Component con `usePathname()`)
-10. **Cleanup código**: comprobar y borrar `home-client.tsx` huerfano si sigue ahí
-11. **Rate limiting** en server actions (CRÍTICO antes de abrir a más usuarios)
-12. **Decisión sobre rebrand**: cambiar de "Lumma" a otro nombre por el conflicto con Luma — sin urgencia, opción A (proyecto de aprendizaje) vigente
-13. **Añadir `predev: prisma generate`** al `package.json` de `apps/web` para evitar bugs de cliente desactualizado al cambiar de rama
-14. Verificación email con Mailtrap
+   - Revisar el item "Solarium" en sidebar (vive en collapsible "Herramientas" → "Área de estudio")
+7. **PR #1 merge** — pendiente de revisar y mergear https://github.com/ikcdv23/Lumma/pull/1 (eliminar cuenta + change password ya hecho)
+8. **Spike IA flashcards** (paralelo, no bloquea Solarium) — `/lab/flashcards` con Gemini Flash
+9. **Verificar drift Neon** (sección "drift de schema en Neon")
+10. **Refactor folder repo cross-feature**: actualmente `solarium.service.createSession` toca `prisma.folder.findUnique` directo (TODO marcado en código). Cuando exista `server/folders/folder.repository.ts`, mover a `folderRepository.findByIdAndUser(folderId, userId)`
+11. **Ticket: Rebranding pass post-Solarium MVP** — coherencia visual cross-feature (tipografía, spacing, radios, idioma UI, paleta cross-feature). Es refactor grande.
+12. **Ticket: ficha técnica de sesión** — `/solarium/sessions/[id]` con detalle de sesión. RecentSessionCard ya está preparada con `cursor-pointer`
+13. **Email reset de contraseña** — pendiente de tener dominio propio + Resend setup (free tier 3.000/mes)
+14. **Logo profesional** — placeholder actual: pill amarilla con Sparkles
+15. **Active route highlighting** en sidebar (requiere `usePathname()` en Client Component)
+16. **Rate limiting** en server actions (CRÍTICO antes de abrir a usuarios reales)
+17. **Modales confirmación AlertDialog** — reemplazar `window.confirm()` en `note-actions-menu.tsx`, folder delete, feedback delete
+18. **Decisión sobre rebrand Lumma vs LumaNote** — sin urgencia, opción A (proyecto aprendizaje) vigente
+19. **Añadir `predev: prisma generate`** al `package.json` de `apps/web` para evitar bugs de cliente stale al cambiar de rama
+20. **Cleanup código**: comprobar y borrar `home-client.tsx` huerfano si sigue ahí
+21. Verificación email con Mailtrap
 
 ### Hecho (no repetir)
 
@@ -484,11 +599,15 @@ Por orden de prioridad:
 - ~~Validación con Zod en feedback-actions~~ — manual con `if`, decisión consciente low-risk
 - ~~Bug del sidebar (empty `<li>` tras revalidatePath)~~ — ✅ arreglado 2026-05-06
 - ~~Schema StudySession + migración~~ — ✅ aplicada en local
-- ~~Server actions Solarium~~ — ✅ todas implementadas 2026-05-08
+- ~~Server actions Solarium~~ — ✅ implementadas 2026-05-08, **refactorizadas a 3 capas 2026-05-12**
 - ~~Sky components extraídos~~ — ✅ con lowDetail prop 2026-05-11
 - ~~Sidebar refactor (header, collapsible, user dropdown)~~ — ✅ 2026-05-11
 - ~~Cleanup schema (isQuickNote, autoDelete)~~ — ✅ ya no están en schema, BD local ya migrada
 - ~~Spellcheck en code blocks~~ — descartado, aceptamos squigglies por bug con ProseMirror
+- ~~Fase 3 Solarium (hub con datos reales)~~ — ✅ enchufado 2026-05-12 (solo TODAY_MINUTES sigue mock)
+- ~~Eliminar cuenta~~ — ✅ implementado 2026-05-12, en PR #1 pendiente merge
+- ~~Documento de arquitectura~~ — ✅ `docs/concepts/arquitectura.md` 2026-05-12
+- ~~Decisiones UX Solarium MVP~~ — ✅ cerradas 2026-05-12 (ver "Reglas UX cerradas")
 
 ---
 
@@ -625,14 +744,14 @@ Añadir en `User`: `studySessions StudySession[]`. Añadir en `Folder`: `studySe
 |---|---|---|
 | 0 | Defaults rápidos (decisiones pendientes) | ✅ hecho 2026-05-06 |
 | 1 | Schema StudySession + migración | ✅ aplicada en local 2026-05-06 (campo `title` añadido 2026-05-08) |
-| 2 | Server actions (`createSession`, `heartbeat`, `abandonSession`, `completeSession`, `getActiveSession`, `getRecentSessions`, `getStreak`) | ✅ todas implementadas 2026-05-08 en `solarium-actions.ts` |
-| 3 | Hub real `/solarium` con datos de DB | 🟡 estética hecha 2026-05-11, falta enchufar server actions (mock data en consts marcadas TODO) |
-| 4 | Crear sesión real `/solarium/new` | ⏳ archivo creado vacío |
-| 5 | Sesión activa `/active` con timer, heartbeat, beforeunload | ⏳ archivos creados vacíos. La fase más densa, ~2 sesiones |
+| 2 | Server actions (`createSession`, `heartbeat`, `abandonSession`, `completeSession`, `getActiveSession`, `getRecentSessions`, `getStreak`) | ✅ 2026-05-08 → **refactorizadas a 3 capas 2026-05-12** (repo + service + actions) |
+| 3 | Hub real `/solarium` con datos de DB | ✅ enchufado 2026-05-12. Solo pendiente: crear `getTodayStudyMinutes(userId)` (TODAY_MINUTES sigue mock) |
+| 4 | Crear sesión real `/solarium/new` | ⏳ archivo creado vacío. Decisiones UX cerradas (ver "Reglas UX cerradas") |
+| 5 | Sesión activa `/active` con timer, heartbeat, beforeunload, **popup de abandono custom** | ⏳ archivos vacíos. La fase más densa, ~2 sesiones. Patrón timer: "X restantes / X de Y hechos" |
 | 6 | Result interno (estado de /active) con celebración | ⏳ |
-| 7 | Borrar mockup `/sessions-mockup` + sidebar item definitivo (ya existe en collapsible "Herramientas" → "Área de estudio" → "Solario") | ⏳ |
+| 7 | Borrar mockup `/sessions-mockup` + revisar sidebar item definitivo | ⏳ |
 
-**Total restante**: ~5 sesiones de trabajo. Lo siguiente es Fase 3 (enchufar datos al hub).
+**Total restante**: ~3-4 sesiones de trabajo. Lo siguiente: cleanup Tier 1 UX (~25 min) + Fase 4.
 
 ### Sky components extraídos (2026-05-11)
 
@@ -808,21 +927,26 @@ Antes de retomar `feature/solarium`, comprobar el estado de Neon (1 minuto). Dec
 
 ---
 
-## Inventario de archivos clave (rama `feature/solarium`, estado 2026-05-11)
+## Inventario de archivos clave (rama `feature/solarium`, estado 2026-05-12)
 
 Para que un agente que entra en frío sepa qué tocar antes de releer todo:
 
-### Solarium
+### Solarium (3 capas, post-refactor 2026-05-12)
 - `apps/web/prisma/schema.prisma` — modelo `StudySession`, enum `StudySessionStatus`
 - `apps/web/prisma/migrations/20260506135432_add_study_sessions/` — migración aplicada en local
-- `apps/web/server/actions/solarium-actions.ts` — 7 server actions completas
-- `apps/web/app/(workspace)/solarium/page.tsx` — hub estético con mock data
+- **`apps/web/server/solarium/solarium.repository.ts`** — 7 funciones puras de acceso a datos (find/create/update). Filtran siempre por `userId`. Cero auth, cero lógica
+- **`apps/web/server/solarium/solarium.service.ts`** — lógica de negocio (idempotencia, lazy cleanup, streak). Recibe `userId`, llama al repo. TODO marcado: refactorizar folder check a `folderRepository`
+- **`apps/web/server/solarium/solarium-actions.ts`** — 4 mutaciones finas (`createSessionAction`, `heartbeatAction`, `abandonSessionAction`, `completeSessionAction`) + helper `getAuthedUserId` (pendiente mover a `lib/auth-helpers.ts`). Lecturas eliminadas — Server Components llaman directo al service. **Pendiente**: renombrar a `solarium.actions.ts` por consistencia
+- ~~`apps/web/server/actions/solarium-actions.ts`~~ — ubicación vieja, verificar si aún existe y borrar
+- `apps/web/app/(workspace)/solarium/page.tsx` — hub funcional con datos reales (recent + streak desde service vía `Promise.all`). Mock solo en `TODAY_MINUTES = 0`. Helper `formatWhen()` para fechas relativas en español
 - `apps/web/app/(workspace)/sessions-mockup/` — mockup completo, BORRAR en Fase 7
 - `apps/web/app/(workspace)/sessions-mockup/sky-states/page.tsx` — referencia visual de las 4 fases del cielo
 - `apps/web/app/(solariumspace)/layout.tsx` — VACÍO, Fase 5
 - `apps/web/app/(solariumspace)/active/page.tsx` — VACÍO, Fase 5
-- `apps/web/components/solarium/sky/*.tsx` — 6 componentes Sky con lowDetail prop
+- `apps/web/components/solarium/sky/*.tsx` — 6 componentes Sky + `index.ts` barrel con lowDetail prop
 - `apps/web/components/solarium/{abandon-button,folder-picker-button,save-as-template-button,templates-section}.tsx` — restos del mockup, reciclar o borrar según hagan falta
+- `apps/web/app/(workspace)/debug/` — página temporal de debug del refactor. BORRAR
+- `docs/concepts/arquitectura.md` — guía de referencia de las 3 capas
 
 ### Layout y sidebar (refactor 2026-05-11)
 - `apps/web/app/(workspace)/layout.tsx` — sidebar pulido, user dropdown footer
@@ -830,6 +954,14 @@ Para que un agente que entra en frío sepa qué tocar antes de releer todo:
 - `apps/web/components/sidebar-mobile-auto-close.tsx` — cierra drawer en mobile al navegar
 - `apps/web/components/ui/sidebar-variants.ts` — `sidebarMenuButtonVariants` + `sidebarMenuSubButtonVariants` (cva)
 - `apps/web/server/actions/auth-actions.ts` — `signOutAction()` exportada para usar desde Client Components
+
+### Profile y account (rama `feature/LUMMA-02-Change-password`, en PR #1)
+- `apps/web/app/(workspace)/profile/page.tsx` — sección "Zona peligrosa" añadida
+- `apps/web/components/profile/profile-name-form.tsx` — cambio de nombre
+- `apps/web/components/profile/profile-password-form.tsx` — cambio de contraseña (ya estaba en dev)
+- `apps/web/components/profile/profile-delete-form.tsx` — Dialog con confirmación "ELIMINAR"
+- `apps/web/server/actions/user-actions.ts` — `getProfile`, `updateName`, `updatePassword`, `deleteAccount`
+- `apps/web/schemas/user.schema.ts` — `updateNameSchema`, `updatePasswordSchema`, `deleteAccountSchema`
 
 ### Editor
 - `apps/web/components/notes/blocknote.tsx` — BlockNote con schema custom + Shiki + 14 lenguajes
@@ -845,8 +977,8 @@ Para que un agente que entra en frío sepa qué tocar antes de releer todo:
 - `apps/web/auth.ts` — config NextAuth v5 (Google + Credentials + Prisma adapter + JWT)
 - `apps/web/proxy.ts` — middleware con cookie cleanup para JWTs inválidos
 
-### Estado de la rama
-- **Rama actual**: `feature/solarium`
-- **Upstream**: `origin/feature/solarium`
-- **Vercel deploya**: rama `dev` (no `feature/solarium`)
-- **Historia "fea"**: tras el lío del 2026-05-07, hay `add Solarium → revert → reapply` en la historia. Cuando se mergee a dev, considerar `git merge --squash` para aplanar.
+### Estado de las ramas
+- **Rama actual de trabajo**: `feature/solarium`
+- **Rama paralela**: `feature/LUMMA-02-Change-password` → PR #1 pendiente merge a `dev`
+- **Vercel deploya**: rama `dev`
+- **Historia "fea" de feature/solarium**: tras el lío del 2026-05-07, hay `add Solarium → revert → reapply` + commit WIP del refactor de capas. Cuando se mergee a dev, considerar `git merge --squash` para aplanar.
