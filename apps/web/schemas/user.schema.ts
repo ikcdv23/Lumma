@@ -21,5 +21,13 @@ export const updatePasswordSchema = z
 		path: ["confirmPassword"],
 	});
 
+export const deleteAccountSchema = z.object({
+	password: z.string(),
+	confirmation: z.literal("ELIMINAR", {
+		message: 'Debes escribir "ELIMINAR" exactamente para confirmar',
+	}),
+});
+
 export type UpdateNameInput = z.infer<typeof updateNameSchema>;
 export type UpdatePasswordInput = z.infer<typeof updatePasswordSchema>;
+export type DeleteAccountInput = z.infer<typeof deleteAccountSchema>;

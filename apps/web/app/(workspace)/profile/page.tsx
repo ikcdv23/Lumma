@@ -1,8 +1,9 @@
 import { redirect } from "next/navigation";
-import { FileText, Folder, Mail, User, KeyRound, Calendar } from "lucide-react";
+import { AlertTriangle, FileText, Folder, Mail, User, KeyRound, Calendar } from "lucide-react";
 import { getProfile } from "@/server/actions/user-actions";
 import { ProfileNameForm } from "@/components/profile/profile-name-form";
 import { ProfilePasswordForm } from "@/components/profile/profile-password-form";
+import { ProfileDeleteForm } from "@/components/profile/profile-delete-form";
 
 export const metadata = {
 	title: "Perfil",
@@ -138,6 +139,25 @@ export default async function ProfilePage() {
 					</p>
 				</section>
 			)}
+
+			{/* Zona peligrosa */}
+			<section className="flex flex-col gap-4 rounded-xl border border-destructive/30 bg-destructive/5 p-6">
+				<div className="flex flex-col gap-1">
+					<div className="flex items-center gap-2">
+						<AlertTriangle className="size-4 text-destructive" />
+						<h3 className="text-base font-semibold text-destructive">
+							Zona peligrosa
+						</h3>
+					</div>
+					<p className="text-sm text-muted-foreground">
+						Eliminar tu cuenta borrará permanentemente todas tus notas,
+						carpetas, sesiones y feedback. Esta acción no se puede deshacer.
+					</p>
+				</div>
+				<div>
+					<ProfileDeleteForm hasPassword={profile.hasPassword} />
+				</div>
+			</section>
 		</div>
 	);
 }
