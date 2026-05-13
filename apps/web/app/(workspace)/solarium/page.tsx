@@ -5,7 +5,7 @@ import { auth } from "@/auth";
 import { SkyToday } from "@/components/solarium/sky";
 import * as solariumService from "@/server/solarium/solarium.service";
 
-export const metadata = { title: "Solario" };
+export const metadata = { title: "Solarium" };
 
 // TODO: reemplazar por getTodayStudyMinutes(userId) cuando exista en el service
 const TODAY_MINUTES = 0;
