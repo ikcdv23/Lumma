@@ -43,8 +43,22 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 		strategy: "jwt"
 	},
 	callbacks: {
-		jwt({ token, user }) {
-			if (user) token.id = user.id;
+		async jwt({ token, user }) {
+			if (user) {
+				token.id = user.id;
+				return token;
+			}
+
+			// En llamadas posteriores (sin user), verificar que sigue existiendo en BD.
+			// Si se borró (deleteAccount, GDPR, admin), invalidamos devolviendo null.
+			if (token?.id) {
+				const exists = await prisma.user.findUnique({
+					where: { id: token.id as string },
+					select: { id: true },
+				});
+				if (!exists) return null;
+			}
+
 			return token;
 		},
 		session({ session, token }) {
