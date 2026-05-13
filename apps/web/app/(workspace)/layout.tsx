@@ -132,14 +132,11 @@ export default async function WorkspaceLayout({
 						<SidebarMenu>
 							<Collapsible className="group/study">
 								<SidebarMenuItem>
-									<CollapsibleTrigger asChild>
-										<button
-											type="button"
-											className={sidebarMenuButtonVariants()}
-										>
-											Área de estudio
-											<ChevronDown className="ml-auto size-4 transition-transform group-data-[state=open]/study:rotate-180" />
-										</button>
+									<CollapsibleTrigger
+										className={sidebarMenuButtonVariants()}
+									>
+										Área de estudio
+										<ChevronDown className="ml-auto size-4 transition-transform group-data-[state=open]/study:rotate-180" />
 									</CollapsibleTrigger>
 									<CollapsibleContent>
 										<SidebarMenuSub>

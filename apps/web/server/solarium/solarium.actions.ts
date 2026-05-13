@@ -1,29 +1,19 @@
 "use server";
 
-import * as solariumService from "./solarium.service";
-import { auth } from "@/auth"
 import { revalidatePath } from "next/cache";
+import { getAuthedUserId } from "@/lib/auth-helper";
+import * as solariumService from "./solarium.service";
 
-export async function getAuthedUserId(): Promise<string | null> {
-	const session = await auth();
-	return session?.user?.id ?? null;
-}
-
-
-export async function createSessionAction(
-	title: string | null,
-	folderId: string | null,
-	targetMinutes: number,
-) {
+export async function createSessionAction(input: {
+	title: string | null;
+	folderIds: string[];
+	noteIds: string[];
+	targetMinutes: number;
+}) {
 	const userId = await getAuthedUserId();
 	if (!userId) return null;
 
-	const created = await solariumService.createSession(
-		userId,
-		title,
-		folderId,
-		targetMinutes,
-	);
+	const created = await solariumService.createSession(userId, input);
 
 	revalidatePath("/solarium");
 	return created;
@@ -33,7 +23,7 @@ export async function heartbeatAction(sessionId: string) {
 	const userId = await getAuthedUserId();
 	if (!userId) return null;
 
-	return await solariumService.heartbeat(userId, sessionId)
+	return await solariumService.heartbeat(userId, sessionId);
 }
 
 export async function abandonSessionAction(
@@ -48,7 +38,8 @@ export async function abandonSessionAction(
 		userId,
 		sessionId,
 		studyMinutes,
-		breakMinutes)
+		breakMinutes,
+	);
 
 	revalidatePath("/solarium");
 }
@@ -65,7 +56,8 @@ export async function completeSessionAction(
 		userId,
 		sessionId,
 		studyMinutes,
-		breakMinutes,)
+		breakMinutes,
+	);
 
 	revalidatePath("/solarium");
 }

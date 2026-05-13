@@ -14,6 +14,13 @@ type FoldersGridProps = {
     folders: Folder[];
 };
 
-export function FoldersGrid({ folders }: FoldersGridProps) {
-    
-}
+export function SelectMaterialsGrid({ folders }: FoldersGridProps) {
+    return (
+        <div className="m-4 p-6 flex border-ro">
+
+            <div className="m-4 p-6 flex items-start just">
+
+            </div>
+        </div>
+    );
+};

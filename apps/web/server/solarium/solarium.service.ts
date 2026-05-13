@@ -51,27 +51,37 @@ export async function getStreak(userId: string) {
 
 export async function createSession(
 	userId: string,
-	title: string | null,
-	folderId: string | null,
-	targetMinutes: number,
+	input: {
+		title: string | null;
+		folderIds: string[];
+		noteIds: string[];
+		targetMinutes: number;
+	},
 ) {
 	const existing = await solariumRepository.findActiveByUser(userId);
 	if (existing) return existing;
 
-	// TODO: mover a folderRepository.findByIdAndUser cuando exista la capa de folders
-	if (folderId) {
-		const folder = await prisma.folder.findUnique({
-			where: { id: folderId, userId },
-			select: { id: true },
+	// TODO: mover a folderRepository/noteRepository cuando existan las capas
+	if (input.folderIds.length > 0) {
+		const ownedFolders = await prisma.folder.count({
+			where: { id: { in: input.folderIds }, userId },
 		});
-		if (!folder) return null;
+		if (ownedFolders !== input.folderIds.length) return null;
+	}
+
+	if (input.noteIds.length > 0) {
+		const ownedNotes = await prisma.note.count({
+			where: { id: { in: input.noteIds }, userId },
+		});
+		if (ownedNotes !== input.noteIds.length) return null;
 	}
 
 	return solariumRepository.create({
 		userId,
-		folderId,
-		title: title?.trim() || defaultSessionTitle(),
-		targetMinutes,
+		folderIds: input.folderIds,
+		noteIds: input.noteIds,
+		title: input.title?.trim() || defaultSessionTitle(),
+		targetMinutes: input.targetMinutes,
 	});
 }
 

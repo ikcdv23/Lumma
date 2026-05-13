@@ -9,10 +9,9 @@ export function findActiveByUser(userId: string) {
 
 export function findRecentByUser(userId: string, limit: number = 10) {
 	return prisma.studySession.findMany({
-		where: { userId },
+		where: { userId, status: { not: "ACTIVE" } },
 		orderBy: { startedAt: "desc" },
 		take: limit,
-		include: { folder: { select: { name: true } } },
 	});
 }
 
@@ -26,11 +25,24 @@ export function findCompletedByUser(userId: string) {
 
 export function create(data: {
 	userId: string;
-	folderId: string | null;
+	folderIds: string[];
+	noteIds: string[];
 	title: string;
 	targetMinutes: number;
 }) {
-	return prisma.studySession.create({ data });
+	return prisma.studySession.create({
+		data: {
+			userId: data.userId,
+			title: data.title,
+			targetMinutes: data.targetMinutes,
+			folder: {
+				connect: data.folderIds.map((id) => ({ id })),
+			},
+			notes: {
+				connect: data.noteIds.map((id) => ({ id })),
+			},
+		},
+	});
 }
 
 export function updateHeartbeat(sessionId: string, userId: string) {

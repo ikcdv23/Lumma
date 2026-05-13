@@ -22,7 +22,7 @@ const folders: Option[] = [
 
 export function FolderPickerButton() {
 	const [open, setOpen] = useState(false);
-	const [selected, setSelected] = useState<Option>(folders[0]);
+	const [selected, setSelected] = useState<Option>(folders[0]!);
 
 	return (
 		<>

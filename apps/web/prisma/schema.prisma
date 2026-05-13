@@ -87,28 +87,35 @@ model Note {
   title   String
   content Json   @default("{}")
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+ 
+  studySessions StudySession[]
 
   folder   Folder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
   folderId String?
-  user     User    @relation(fields: [userId], references: [id])
-  userId   String
+
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
 }
 
 model FeedbackPost {
   id        String         @id @default(uuid())
+ 
   content   String
   rating    Int
+  votes     FeedbackVote[]
+ 
   createdAt DateTime       @default(now())
+ 
   author    User           @relation(fields: [authorId], references: [id])
   authorId  String
-  votes     FeedbackVote[]
 }
 
 model FeedbackVote {
   user   User         @relation(fields: [userId], references: [id])
   userId String
+ 
   post   FeedbackPost @relation(fields: [postId], references: [id], onDelete: Cascade)
   postId String
 
@@ -122,17 +129,18 @@ enum StudySessionStatus {
 }
 
 model StudySession {
-  id       String  @id @default(uuid())
-  userId   String
-  user     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  folderId String?
-  folder   Folder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  folder Folder[]
+  notes  Note[]
 
   startedAt  DateTime  @default(now())
   endedAt    DateTime?
   lastSeenAt DateTime  @default(now())
 
-  title         String 
+  title         String
   targetMinutes Int
   studyMinutes  Int    @default(0)
   breakMinutes  Int    @default(0)
