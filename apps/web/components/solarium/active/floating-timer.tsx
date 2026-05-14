@@ -1,5 +1,4 @@
-import { Check, Minus, Sun } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Minus, Sun } from "lucide-react";
 
 export function FloatingTimer({
 	expanded,
@@ -64,15 +63,6 @@ export function FloatingTimer({
 					style={{ width: `${progress}%` }}
 				/>
 			</div>
-
-			{/* TODO: enchufar completeSessionAction */}
-			<Button
-				size="sm"
-				className="w-full bg-amber-500 hover:bg-amber-600 text-white"
-			>
-				<Check className="size-4" />
-				Completar
-			</Button>
 		</div>
 	);
 }

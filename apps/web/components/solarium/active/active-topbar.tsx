@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import {
 	LayoutGrid,
 	ListTodo,
@@ -6,6 +9,16 @@ import {
 	X,
 	type LucideIcon,
 } from "lucide-react";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 
 type Tab = "notas" | "tareas" | "tablero";
@@ -14,11 +27,19 @@ export function ActiveTopbar({
 	title,
 	activeTab,
 	onTabChange,
+	onAbandon,
+	abandonPending,
+	elapsedMinutes,
 }: {
 	title: string;
 	activeTab: Tab;
 	onTabChange: (tab: Tab) => void;
+	onAbandon: () => void;
+	abandonPending: boolean;
+	elapsedMinutes: number;
 }) {
+	const [confirmOpen, setConfirmOpen] = useState(false);
+
 	return (
 		<header className="flex h-14 shrink-0 items-center gap-4 border-b px-4">
 			<div className="flex items-center gap-2">
@@ -49,14 +70,40 @@ export function ActiveTopbar({
 				</div>
 			</div>
 
-			{/* TODO: AlertDialog de confirmación antes de abandonar/completar */}
 			<button
 				type="button"
-				className="flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:border-amber-400/60 hover:text-foreground"
+				onClick={() => setConfirmOpen(true)}
+				className="flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:border-red-400/60 hover:text-foreground"
 			>
 				<X className="size-4" />
-				Terminar
+				Abandonar
 			</button>
+
+			<AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>¿Abandonar la sesión?</AlertDialogTitle>
+						<AlertDialogDescription>
+							Esta sesión se marcará como abandonada y{" "}
+							<strong>no contará para tu racha</strong>. Llevas{" "}
+							{elapsedMinutes}{" "}
+							{elapsedMinutes === 1 ? "minuto" : "minutos"} de estudio.
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel disabled={abandonPending}>
+							Quedarme
+						</AlertDialogCancel>
+						<AlertDialogAction
+							onClick={onAbandon}
+							disabled={abandonPending}
+							className="bg-red-500 hover:bg-red-600 text-white"
+						>
+							{abandonPending ? "Saliendo..." : "Sí, abandonar"}
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
 		</header>
 	);
 }

@@ -20,6 +20,8 @@ export function MaterialSidebar({
 	onSelectNote,
 	openFolders,
 	onToggleFolder,
+	onCreateNote,
+	creatingNote,
 }: {
 	folders: FolderMaterial[];
 	looseNotes: LooseNote[];
@@ -28,6 +30,8 @@ export function MaterialSidebar({
 	onSelectNote: (id: string) => void;
 	openFolders: Set<string>;
 	onToggleFolder: (id: string) => void;
+	onCreateNote: () => void;
+	creatingNote: boolean;
 }) {
 	return (
 		<aside className="flex w-72 shrink-0 flex-col overflow-y-auto border-r bg-muted/20">
@@ -111,13 +115,14 @@ export function MaterialSidebar({
 					</>
 				)}
 
-				{/* TODO: enchufar crear nota desde aquí (revalidar para que aparezca) */}
 				<button
 					type="button"
-					className="mt-4 flex items-center gap-1.5 rounded-md border border-dashed px-2 py-2 text-xs text-muted-foreground transition-colors hover:border-amber-400/60 hover:text-foreground"
+					onClick={onCreateNote}
+					disabled={creatingNote}
+					className="mt-4 flex items-center gap-1.5 rounded-md border border-dashed px-2 py-2 text-xs text-muted-foreground transition-colors hover:border-amber-400/60 hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
 				>
 					<Plus className="size-3.5" />
-					Nueva nota en esta sesión
+					{creatingNote ? "Creando..." : "Nueva nota en esta sesión"}
 				</button>
 			</div>
 		</aside>

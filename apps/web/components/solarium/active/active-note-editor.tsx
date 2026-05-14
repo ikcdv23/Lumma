@@ -18,7 +18,7 @@ export function ActiveNoteEditor({
 	return (
 		<section className="flex flex-1 flex-col overflow-y-auto">
 			<div className="mx-auto w-full max-w-3xl px-8 py-12">
-				<EditableNote note={selectedNote} />
+				<EditableNote key={selectedNote.id} note={selectedNote} />
 			</div>
 		</section>
 	);

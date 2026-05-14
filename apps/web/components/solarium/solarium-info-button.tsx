@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Info, Sun } from "lucide-react";
+import { FlaskConical, Info, Sun } from "lucide-react";
 import {
 	Dialog,
 	DialogContent,
@@ -30,6 +30,10 @@ export function SolariumInfoButton() {
 						<div className="flex items-center gap-2">
 							<Sun className="size-5 text-amber-500" />
 							<DialogTitle>¿Qué es Solarium?</DialogTitle>
+							<span className="ml-1 inline-flex items-center gap-1 rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-700">
+								<FlaskConical className="size-3" />
+								Beta
+							</span>
 						</div>
 						<DialogDescription>
 							Tu espacio para sesiones de estudio enfocadas.
@@ -59,6 +63,14 @@ export function SolariumInfoButton() {
 							<p className="leading-relaxed">
 								Cada sesión completa suma luz a tu cielo del día.
 								Mantén la racha estudiando un poco cada día.
+							</p>
+						</div>
+
+						<div className="flex items-start gap-2 rounded-lg border border-dashed border-muted p-3 text-xs text-muted-foreground">
+							<FlaskConical className="size-3.5 shrink-0 mt-0.5 text-amber-500" />
+							<p className="leading-relaxed">
+								<strong className="text-foreground">Función en beta.</strong>{" "}
+								Estamos puliéndola — algunas piezas (pomodoro con pausas, drag &amp; drop, crear carpetas dentro de la sesión) llegarán pronto.
 							</p>
 						</div>
 					</div>

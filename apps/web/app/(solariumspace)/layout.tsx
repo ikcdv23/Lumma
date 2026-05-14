@@ -1,7 +1,10 @@
-import * as solariumService from "@/server/solarium/solarium.service";
+import "@blocknote/mantine/style.css";
 
-// TODO Fase 5: layout sin sidebar para distraction-free mode
-export default function SolariumSpaceLayout({children,}: {
+// Layout transparente del route group: existe para escapar del sidebar de
+// (workspace) y dar a /active un modo distraction-free. No añade chrome propio.
+export default function SolariumSpaceLayout({
+	children,
+}: {
 	children: React.ReactNode;
 }) {
 	return <>{children}</>;

@@ -1,4 +1,4 @@
-# Handoff — actualizado 2026-05-13 (mañana siguiente)
+# Handoff — actualizado 2026-05-14 (cierre tarde)
 
 > Documento para retomar el trabajo en otra maquina o despues de un break. Lee esto **primero**.
 
@@ -174,6 +174,33 @@ Sesion 2026-05-13 (mañana siguiente — Fase 5 arrancada):
   - **Server Component vs Action**: regla "actions son frontera cliente↔servidor, no capa de coherencia". Si la llamada no cruza la frontera, la action sobra. Service sí se mantiene aunque sea passthrough (coherencia + punto de extensión + test target).
   - **SRP en repo**: cada función responde una sola pregunta. **No fusionar** `findActiveByUser` con búsqueda por id — son dos casos de uso distintos (sesión activa actual vs ficha técnica). Añadir `findByIdForUser(sessionId, userId)` separada cuando llegue la ficha técnica.
   - **Layouts y children**: `{children}` es prop especial. Layouts en App Router envuelven sus rutas hijas, Next inyecta la página como `children`. Route group `(solariumspace)` existe para dar layout distinto (sin sidebar workspace) sin cambiar la URL.
+
+Sesion 2026-05-14 (jornada larga — Fase 5 casi cerrada):
+
+- **Split arquitectónico de `ActiveSession`** en 6 componentes focados bajo `components/solarium/active/`:
+  - `active-session.tsx` — coordinador (state + layout, ~125 líneas)
+  - `active-topbar.tsx` — topbar con tabs + AlertDialog de abandono (TabButton inline)
+  - `material-sidebar.tsx` — sub-sidebar de carpetas + notas sueltas + botón "Nueva nota" (NoteItem inline)
+  - `active-note-editor.tsx` — wrapper que usa `<EditableNote>` reusable
+  - `floating-timer.tsx` — pildora / panel expandido (sin botón Completar — decisión consciente)
+  - `coming-soon.tsx` — placeholder para Tareas/Tablero
+- **`EditableNote` extraído** en `components/notes/editable-note.tsx`: state (title, blocks, saveStatus) + autosave debounce 500ms + input editable + BlockNote dynamic + callback `onSaveStatusChange`. Reusado por `NoteDetailClient` y `ActiveNoteEditor`. Consumer pone su chrome alrededor.
+- **`/active` con datos reales**: Server Component fetch material → resolución de folders + looseNotes (filtro por `sessionNoteIds`) + cálculo de `initialRemainingSeconds` desde `startedAt`. Sub-sidebar muestra "Sesión libre" si no hay material.
+- **Bug crítico arreglado — editor cross-contamination**: al cambiar de nota en sidebar, el editor sobreescribía contenido de otras notas. Causa: `EditableNote` no se remontaba al cambiar prop, el state local mantenía bloques anteriores + autosave los persistía con el nuevo id. Fix: `key={selectedNote.id}` en `<EditableNote>` desde `ActiveNoteEditor`. Aprendizaje: el `key` es la herramienta exacta cuando un componente tiene identidad ligada a una entidad.
+- **CSS BlockNote en `(solariumspace)/layout.tsx`**: el editor en `/active` se veía sin estilos. Causa: `@blocknote/mantine/style.css` solo estaba importado en `(workspace)/layout.tsx`. Lección: cada layout en App Router es su propio "mundo CSS"; si una librería carga CSS lateral, hay que importarlo en cada layout consumidor.
+- **`requireAuthedUserId` añadida a `auth-helper.ts`**: variante que redirige a `/login` internamente. Return type `Promise<string>` (no nullable) porque `redirect()` tiene return `never`. Para Server Components donde el `if` boilerplate sobra. Convivencia: `getAuthedUserId` para actions, `requireAuthedUserId` para pages.
+- **Botón "Abandonar"** del topbar enchufado: AlertDialog con "Quedarme" / "Sí, abandonar" (rojo). Muestra minutos transcurridos en el copy. Dispara `abandonSessionAction` + redirect. `useTransition` para "Saliendo..." pending state.
+- **Botón "Nueva nota en esta sesión"** enchufado: action `createNoteInActiveSessionAction()` que crea note vacía + connect M:N a sesión activa. Cliente hace `setSelectedNoteId(created.id)` + `router.refresh()` para traer material actualizado. Smell consciente: action toca `prisma.note.create` inline (no hay capa de service para notes todavía) — documentado en deuda técnica.
+- **Aviso "beta"** añadido al `SolariumInfoButton`: chip ámbar al título + bloque al final mencionando funciones por venir (pomodoro con pausas, drag & drop, crear carpetas).
+- **Refactor folder-feature CRUD (deuda)**: confirmado que `/new/page.tsx` toca `prisma.folder.findMany` y `prisma.note.findMany` directamente (capa única legacy). Se mantiene por ahora; ticket de migración a 3 capas en "Donde retomar".
+- **Conceptos cubiertos en la sesión**:
+  - **Regla de los Hooks**: `useState`/`useEffect` identificados por **posición**, no por nombre. Llamarlos condicionalmente destroza la memoria de React. Siempre arriba del componente.
+  - **`key` para forzar remount**: patrón cuando un componente tiene state ligado a la identidad de una entidad.
+  - **`redirect()` y narrowing**: return type `never` permite que TS sepa que el código después no se ejecuta. Habilita helpers como `requireAuthedUserId`.
+  - **Route groups y CSS scope**: cada layout es un árbol CSS aparte.
+  - **Smells con disciplina**: identificar, anotar como deuda, aplazar refactor con ticket. No parchear.
+  - **Lifting state up + props drilling**: state en el coordinador, hijos reciben props y disparan callbacks.
+  - **Function types**: `() => void`, `(id: string) => void` — describir contratos sin implementación.
 
 ---
 
@@ -622,30 +649,27 @@ docker compose up -d
 
 Por orden de prioridad:
 
-1. **Destrabar errores actuales en construcción** (rápido, antes que nada):
-   - [active/page.tsx:22](apps/web/app/(solariumspace)/active/page.tsx#L22): `.map` sobre Promise sin `await` (o sobre algo que no es array). El user lo dejó a medias.
-   - [new/page.tsx](apps/web/app/(workspace)/solarium/new/page.tsx): referencias a `studySessions` (no existe en `User`) y vars `folders`/`notes` no definidas en línea 44. El user tocó algo y rompió el fetch original.
-   - **Borrar `getMaterialAction`** de `solarium.actions.ts` (decisión cerrada — sobra porque no cruza frontera cliente↔servidor).
-2. **PR #1 merge a `dev`** — eliminar cuenta + change password + fix JWT-DB sync. https://github.com/ikcdv23/Lumma/pull/1. Bloquea limpieza del workflow git.
-3. **Solarium Fase 5 — sesión activa** (la más densa, ahora con scope multi-tool):
-   - **Mockup de referencia listo en `/mockup`**: portar la UI a `/active` real reemplazando hardcoded data por la sesión activa real
-   - **Modificar repo** para que `findActiveByUser` traiga material vía `include: { folder: { include: { notes: { select: { id, title } } } }, notes: { select: { id, title } } }` (o crear `findStudyMaterialByUser` separada — decisión pendiente; el user mencionó esta función pero no la vimos definida)
-   - **Tab "Notas" funcional**: sub-sidebar de carpetas (colapsables) + notas sueltas → al click, nota se abre en panel principal con editor BlockNote inline (reusar lógica de autosave de `/notes/[id]`)
-   - **Tabs "Tareas" y "Tablero"**: ComingSoon (ya en el mockup, copiable tal cual)
-   - **Timer flotante real**: useEffect con setInterval que decrementa, heartbeat cada 30-60s a `heartbeatAction`, calcular `studyMinutes` acumulados localmente
-   - **`beforeunload` + `sendBeacon`** para cierre/refresh — dispara `abandonSessionAction` o `completeSessionAction` según el tiempo transcurrido
-   - **Popup de abandono** (`AlertDialog` shadcn) para navegación interna: clicks en sidebar, Links a otras rutas. Necesita navigation guard con `useRouter` interceptado
-   - **Empty state material**: si la sesión no tiene carpetas ni notas, mostrar "Sesión libre" + botón "Crear nota nueva"
-   - **Decisión pendiente**: persistir tab activa con `searchParams` (?tab=notas) o localStorage
-   - Lazy cleanup ya implementado en `solarium.service.getActiveSession` (timeout 2 min)
-   - Borrar `/mockup` cuando `/active` esté listo
+1. **Próxima sesión — peticiones explícitas del user (2026-05-14)**:
+   - **Recuento de tiempo invertido**: agregar minutos estudiados al hub (`TODAY_MINUTES` real). El tiempo cuenta **igual** si la sesión se completa o se abandona. Patrón: `prisma.studySession.aggregate({ _sum: { studyMinutes: true } })` filtrando por `startedAt >= startOfDay` y `status != ACTIVE` (es decir COMPLETED ∪ ABANDONED). Crear `getTodayStudyMinutes(userId)` en `solarium.repository.ts` + service. Enchufar en hub `/solarium/page.tsx` reemplazando `TODAY_MINUTES = 0`.
+   - **Crear carpetas dentro de la sesión activa**: desde el sub-sidebar de material en `/active`, botón "Nueva carpeta" análogo al "Nueva nota". Action `createFolderInActiveSessionAction()` siguiendo el mismo patrón (con mismo smell que la otra: ver deuda técnica nº 7 abajo). Service lookup `solariumService.getActiveSession` para validar pertenencia + crear folder + connect M:N a `studySession.folder`.
+   - **Drag & drop de notas a carpetas**: dentro de la sesión activa, poder arrastrar una nota de "Notas sueltas" a una carpeta o entre carpetas. Librería sugerida: `@dnd-kit/core` (más ligera y accesible que react-dnd). Cada nota necesita `useDraggable`, cada carpeta `useDroppable`. Action `moveNoteToFolderAction(noteId, folderId | null)` que actualiza el `folderId` de la nota. Considerar feedback visual durante el drag (opacidad, drop zones resaltadas en ámbar).
+2. **Solarium Fase 5 — pendientes para cerrar la fase** (tras lo de arriba):
+   - **Heartbeat**: `useEffect` en `ActiveSession` con setInterval cada 45s → `heartbeatAction(sessionId)`. Sin esto, lazy cleanup marca abandoned a los 2 min.
+   - **`beforeunload` + `sendBeacon`** para cierre/refresh — dispara abandono con minutos transcurridos.
+   - **AlertDialog de navegación interna**: el botón "Abandonar" del topbar YA tiene su AlertDialog. Falta interceptar clicks en `<Link>` externos a `/active` para mostrar el mismo diálogo (navigation guard global).
+   - **Botón Completar** y AlertDialog que ofrezca "completar como exitosa" (cuando el timer llega a 0 o el user lo decide manualmente).
+   - **Decisión pendiente**: persistir tab activa con `searchParams` (?tab=notas) o localStorage.
+   - Borrar `/mockup` cuando `/active` esté terminado del todo.
+3. **PR #1 merge a `dev`** — eliminar cuenta + change password + fix JWT-DB sync. https://github.com/ikcdv23/Lumma/pull/1. Bloquea limpieza del workflow git.
 3. **Solarium Fase 6 — Result interno**: estado de celebración dentro de `/active` antes de redirigir
 4. **Solarium Fase 7 — Cleanup final**:
    - Borrar `app/(workspace)/sessions-mockup/` completo (incluye los mockup files de solarium/folder-picker-button, abandon-button, save-as-template-button, templates-section)
    - Revisar el item "Solarium" en sidebar (vive en collapsible "Herramientas" → "Área de estudio")
 5. **Crear `getTodayStudyMinutes(userId)`** en repo + service para enchufar `TODAY_MINUTES` del hub. Patrón: `prisma.studySession.aggregate({ _sum: { studyMinutes: true } })` filtrando por `startedAt >= startOfDay` y `status != ACTIVE`
 6. **Streak=0** — decidir UX (ocultar pill vs copy motivadora "Empieza tu racha hoy")
-7. **Refactor folder repo cross-feature**: actualmente `solarium.service.createSession` toca `prisma.folder.count` y `prisma.note.count` directo (TODO marcado en código). Cuando existan `server/folders/folder.repository.ts` y `server/notes/note.repository.ts`, mover a `folderRepository.countOwnedByUser(ids, userId)`.
+7. **Refactor folder/note repo cross-feature** (deuda técnica acumulada):
+   - `solarium.service.createSession` toca `prisma.folder.count` y `prisma.note.count` directo (TODO marcado en código). Cuando existan `server/folders/folder.repository.ts` y `server/notes/note.repository.ts`, mover a `folderRepository.countOwnedByUser(ids, userId)`.
+   - `solarium.actions.createNoteInActiveSessionAction` rompe la regla "actions no tocan Prisma" porque hace `prisma.note.create` inline. Refactor: mover lógica a `solariumService.createNoteInActiveSession(userId)` que llama a `noteRepository.createForSession({ userId, sessionId })`. Ticket independiente — documentado 2026-05-14.
 8. **Spike IA flashcards** (paralelo, no bloquea Solarium) — `/lab/flashcards` con Gemini Flash
 9. **Verificar drift Neon** (sección "drift de schema en Neon")
 10. **Ticket: Rebranding pass post-Solarium MVP** — coherencia visual cross-feature (tipografía, spacing, radios, idioma UI, paleta cross-feature). Es refactor grande.

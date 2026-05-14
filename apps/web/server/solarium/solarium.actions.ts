@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { getAuthedUserId } from "@/lib/auth-helper";
 import * as solariumService from "./solarium.service";
+import { prisma } from "@/lib/prisma";
 
 export async function createSessionAction(input: {
 	title: string | null;
@@ -60,4 +61,25 @@ export async function completeSessionAction(
 	);
 
 	revalidatePath("/solarium");
+}
+
+export async function createNoteInActiveSessionAction() {
+  const userId = await getAuthedUserId();
+  if (!userId) return null;
+
+  const active = await solariumService.getActiveSession(userId);
+  if (!active) return null;  // o redirect a /solarium
+
+  const newNote = await prisma.note.create({
+    data: {
+      title: "",
+      content: {},
+      userId,
+      studySessions: { connect: { id: active.id } },
+    },
+    select: { id: true },
+  });
+
+  revalidatePath("/active");
+  return newNote;
 }

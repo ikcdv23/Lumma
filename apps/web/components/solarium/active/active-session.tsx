@@ -1,7 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { LayoutGrid, ListTodo } from "lucide-react";
+import {
+	abandonSessionAction,
+	createNoteInActiveSessionAction,
+} from "@/server/solarium/solarium.actions";
 import { ActiveTopbar } from "./active-topbar";
 import { ComingSoon } from "./coming-soon";
 import { FloatingTimer } from "./floating-timer";
@@ -32,12 +37,16 @@ type Props = {
 };
 
 export function ActiveSession({
+	sessionId,
 	title,
 	targetMinutes,
 	initialRemainingSeconds,
 	folders,
 	looseNotes,
 }: Props) {
+	const router = useRouter();
+	const [isAbandoning, startAbandonTransition] = useTransition();
+	const [isCreatingNote, startCreateNoteTransition] = useTransition();
 	const allNotes = useMemo(() => {
 		const list: { id: string; title: string; content: unknown }[] = [];
 		folders.forEach((f) => f.notes.forEach((n) => list.push(n)));
@@ -85,12 +94,32 @@ export function ActiveSession({
 	const selectedNote = allNotes.find((n) => n.id === selectedNoteId) ?? null;
 	const hasMaterial = folders.length > 0 || looseNotes.length > 0;
 
+	const handleAbandon = () => {
+		startAbandonTransition(async () => {
+			await abandonSessionAction(sessionId, elapsedMinutes, 0);
+			router.push("/solarium");
+		});
+	};
+
+	const handleCreateNote = () => {
+		startCreateNoteTransition(async () => {
+			const created = await createNoteInActiveSessionAction();
+			if (created) {
+				setSelectedNoteId(created.id);
+				router.refresh();
+			}
+		});
+	};
+
 	return (
 		<div className="flex h-screen flex-col bg-background">
 			<ActiveTopbar
 				title={title}
 				activeTab={activeTab}
 				onTabChange={setActiveTab}
+				onAbandon={handleAbandon}
+				abandonPending={isAbandoning}
+				elapsedMinutes={elapsedMinutes}
 			/>
 
 			<main className="flex flex-1 overflow-hidden">
@@ -104,6 +133,8 @@ export function ActiveSession({
 							onSelectNote={setSelectedNoteId}
 							openFolders={openFolders}
 							onToggleFolder={toggleFolder}
+							onCreateNote={handleCreateNote}
+							creatingNote={isCreatingNote}
 						/>
 						<ActiveNoteEditor selectedNote={selectedNote} />
 					</>
