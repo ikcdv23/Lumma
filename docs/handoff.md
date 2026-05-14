@@ -1,4 +1,4 @@
-# Handoff — actualizado 2026-05-13 (final tarde)
+# Handoff — actualizado 2026-05-13 (mañana siguiente)
 
 > Documento para retomar el trabajo en otra maquina o despues de un break. Lee esto **primero**.
 
@@ -157,6 +157,23 @@ Sesion 2026-05-13 (HOY):
   - shadcn `Tabs` instalado (`pnpm dlx shadcn@latest add tabs`)
   - Archivos vacíos `(solariumspace)/active/page.tsx` y `/layout.tsx` con stubs default export (estaban rompiendo Next typegen)
   - Mockup folder-picker buttons (death-row code) parcheados con `!` para que compile sin warnings (siguen marcados para borrar en Fase 7)
+
+Sesion 2026-05-13 (mañana siguiente — Fase 5 arrancada):
+
+- **Botón de info en hub Solarium**: `components/solarium/solarium-info-button.tsx`. Icono `Info` en el header (al lado del título), abre Dialog con 3 pasos (Material → Duración → Empezar) + nota sobre cielo del día y racha. Pensado para onboarding silencioso. Colocado en [solarium/page.tsx:34](apps/web/app/(workspace)/solarium/page.tsx#L34).
+- **Decisión de producto importante para `/active`** (cambia el alcance de Fase 5):
+  - **`/active` se convierte en workspace multi-tool** con tabs en horizontal: `[📝 Notas] [✓ Tareas] [▦ Tablero]`. La Notas tab muestra sub-sidebar de material + editor BlockNote inline.
+  - **Tareas y Tablero salen como "Próximamente" en MVP** — el shell visual con las tres tabs queda hecho, pero solo Notas funciona. Sin schema nuevo (`SessionTask`, `BoardColumn`, etc.) hasta validar uso real.
+  - **Timer flotante** en lugar de timer en topbar o pantalla completa. Estado colapsado (pildora `42:17` en bottom-right) y expandido (card con número grande, progreso, botón Completar). Botón `−` recolapsa. Position: bottom-right.
+  - **Empty state material**: si no hay carpetas ni notas, sub-sidebar muestra "Sesión libre" + botón "Crear nota nueva en esta sesión".
+- **Maqueta interactiva en `/mockup`** (`app/(solariumspace)/mockup/page.tsx`): hardcoded, full Client Component, sirve como referencia visual cuando portemos a `/active` real. Incluye tabs funcionales, expand/collapse de carpetas, selección de nota activa (ámbar), placeholder de BlockNote, ComingSoon para tabs no implementadas, FloatingTimer en sus dos estados. Borrable cuando `/active` esté terminada.
+- **`/active/page.tsx` esqueleto**: Server Component `async` con auth + `getActiveSession` + guards (`redirect("/login")` si no hay user, `redirect("/solarium")` si no hay sesión activa). Falta la UI real (portar maqueta) y el include del material (carpetas+notas) en el repo.
+- **`getMaterial` añadido al service** como passthrough válido. **Action `getMaterialAction` debe borrarse** — es lectura desde Server Component, no cruza frontera cliente↔servidor. Decisión cerrada en chat, pendiente de aplicar.
+- **Conceptos didácticos cubiertos en la sesión**:
+  - **Promise**: valor del futuro. `await` desempaqueta. `async` permite usar `await` dentro. En Server Components, marcar la función como `async` directamente.
+  - **Server Component vs Action**: regla "actions son frontera cliente↔servidor, no capa de coherencia". Si la llamada no cruza la frontera, la action sobra. Service sí se mantiene aunque sea passthrough (coherencia + punto de extensión + test target).
+  - **SRP en repo**: cada función responde una sola pregunta. **No fusionar** `findActiveByUser` con búsqueda por id — son dos casos de uso distintos (sesión activa actual vs ficha técnica). Añadir `findByIdForUser(sessionId, userId)` separada cuando llegue la ficha técnica.
+  - **Layouts y children**: `{children}` es prop especial. Layouts en App Router envuelven sus rutas hijas, Next inyecta la página como `children`. Route group `(solariumspace)` existe para dar layout distinto (sin sidebar workspace) sin cambiar la URL.
 
 ---
 
@@ -605,15 +622,23 @@ docker compose up -d
 
 Por orden de prioridad:
 
-1. **PR #1 merge a `dev`** — eliminar cuenta + change password + fix JWT-DB sync. https://github.com/ikcdv23/Lumma/pull/1. Bloquea limpieza del workflow git.
-2. **Solarium Fase 5 — sesión activa** (la más densa, ~2 sesiones de trabajo):
-   - `(solariumspace)/layout.tsx` con stub — falta el layout real sin sidebar
-   - `(solariumspace)/active/page.tsx` con stub — timer grande con patrón "X min restantes / X de Y hechos"
-   - Heartbeat client cada 30-60s a `heartbeatAction`
-   - `beforeunload` + `sendBeacon` para cierre/refresh
-   - **Popup custom de abandono** (`AlertDialog` shadcn) para navegación interna (sidebar clicks, Link). Necesita navigation guard con `useRouter`
-   - Sub-sidebar de notas accesibles en la sesión (`noteIds` ya persistidos al crear)
+1. **Destrabar errores actuales en construcción** (rápido, antes que nada):
+   - [active/page.tsx:22](apps/web/app/(solariumspace)/active/page.tsx#L22): `.map` sobre Promise sin `await` (o sobre algo que no es array). El user lo dejó a medias.
+   - [new/page.tsx](apps/web/app/(workspace)/solarium/new/page.tsx): referencias a `studySessions` (no existe en `User`) y vars `folders`/`notes` no definidas en línea 44. El user tocó algo y rompió el fetch original.
+   - **Borrar `getMaterialAction`** de `solarium.actions.ts` (decisión cerrada — sobra porque no cruza frontera cliente↔servidor).
+2. **PR #1 merge a `dev`** — eliminar cuenta + change password + fix JWT-DB sync. https://github.com/ikcdv23/Lumma/pull/1. Bloquea limpieza del workflow git.
+3. **Solarium Fase 5 — sesión activa** (la más densa, ahora con scope multi-tool):
+   - **Mockup de referencia listo en `/mockup`**: portar la UI a `/active` real reemplazando hardcoded data por la sesión activa real
+   - **Modificar repo** para que `findActiveByUser` traiga material vía `include: { folder: { include: { notes: { select: { id, title } } } }, notes: { select: { id, title } } }` (o crear `findStudyMaterialByUser` separada — decisión pendiente; el user mencionó esta función pero no la vimos definida)
+   - **Tab "Notas" funcional**: sub-sidebar de carpetas (colapsables) + notas sueltas → al click, nota se abre en panel principal con editor BlockNote inline (reusar lógica de autosave de `/notes/[id]`)
+   - **Tabs "Tareas" y "Tablero"**: ComingSoon (ya en el mockup, copiable tal cual)
+   - **Timer flotante real**: useEffect con setInterval que decrementa, heartbeat cada 30-60s a `heartbeatAction`, calcular `studyMinutes` acumulados localmente
+   - **`beforeunload` + `sendBeacon`** para cierre/refresh — dispara `abandonSessionAction` o `completeSessionAction` según el tiempo transcurrido
+   - **Popup de abandono** (`AlertDialog` shadcn) para navegación interna: clicks en sidebar, Links a otras rutas. Necesita navigation guard con `useRouter` interceptado
+   - **Empty state material**: si la sesión no tiene carpetas ni notas, mostrar "Sesión libre" + botón "Crear nota nueva"
+   - **Decisión pendiente**: persistir tab activa con `searchParams` (?tab=notas) o localStorage
    - Lazy cleanup ya implementado en `solarium.service.getActiveSession` (timeout 2 min)
+   - Borrar `/mockup` cuando `/active` esté listo
 3. **Solarium Fase 6 — Result interno**: estado de celebración dentro de `/active` antes de redirigir
 4. **Solarium Fase 7 — Cleanup final**:
    - Borrar `app/(workspace)/sessions-mockup/` completo (incluye los mockup files de solarium/folder-picker-button, abandon-button, save-as-template-button, templates-section)
@@ -659,6 +684,10 @@ Por orden de prioridad:
 - ~~Bug fix sidebar Slot+asChild en CollapsibleTrigger~~ — ✅ 2026-05-13. Fix: usar className directo, no asChild para HTML plano
 - ~~Bug fix toggleFeedbackVote (prisma.feedbackPost → feedbackVote)~~ — ✅ 2026-05-13
 - ~~vercel.json ignoreCommand para skip de feature branches~~ — ✅ 2026-05-13 (pendiente commit/push a dev)
+- ~~Botón info en hub Solarium~~ — ✅ 2026-05-13 (mañana) — `solarium-info-button.tsx` con Dialog explicativo
+- ~~Decisión multi-tool para `/active`~~ — ✅ 2026-05-13 (mañana). Tabs Notas/Tareas/Tablero como shell, solo Notas funcional en MVP
+- ~~Maqueta `/mockup` interactiva~~ — ✅ 2026-05-13 (mañana). Hardcoded, full Client Component, referencia visual para portar a `/active`
+- ~~Esqueleto `/active/page.tsx`~~ — ✅ 2026-05-13 (mañana). Auth + getActiveSession + redirects guards. Sin UI todavía.
 
 ---
 
@@ -993,8 +1022,11 @@ Para que un agente que entra en frío sepa qué tocar antes de releer todo:
 - **`apps/web/app/(workspace)/solarium/new/page.tsx`** — Server Component que fetcha folders (con sus notas) + 50 notas recientes en `Promise.all`. Renderiza `<SessionConfig>`
 - **`apps/web/components/solarium/session-config.tsx`** — Client Component con tabs Carpetas/Notas, multi-selección, modal de carpeta, chips duración, botón submit. Estado: `selectedFolders`, `selectedNotes`, `excludedNoteIds`. Resuelve `finalNoteIds` al submit
 - **`apps/web/components/solarium/folder-contents-modal.tsx`** — Dialog que muestra notas de una carpeta con toggle "Quitar/Incluir". Persiste exclusiones en `excludedNoteIds` del padre
+- **`apps/web/components/solarium/solarium-info-button.tsx`** — Dialog explicativo "¿Qué es Solarium?" con 3 pasos. Botón con icono `Info` en header del hub
 - `apps/web/app/(workspace)/sessions-mockup/` — mockup completo, BORRAR en Fase 7
-- `apps/web/app/(solariumspace)/layout.tsx` y `/active/page.tsx` — stubs con default export (Fase 5)
+- `apps/web/app/(solariumspace)/layout.tsx` — layout transparente (`<>{children}</>`) que crea el route group sin sidebar workspace
+- `apps/web/app/(solariumspace)/active/page.tsx` — esqueleto Server Component con auth + getActiveSession + guards de redirect. Falta UI (Fase 5)
+- **`apps/web/app/(solariumspace)/mockup/page.tsx`** — maqueta interactiva de la pantalla `/active`. Full Client Component, hardcoded. Referencia visual para portar a `/active`. BORRAR cuando `/active` esté terminada
 - `apps/web/components/solarium/sky/*.tsx` — 6 componentes Sky + `index.ts` barrel con lowDetail prop. Gradients/blur permitidos aquí por metáfora visual
 - `apps/web/components/solarium/{abandon-button,folder-picker-button,save-as-template-button,templates-section}.tsx` — restos del mockup, BORRAR en Fase 7
 - `apps/web/components/ui/tabs.tsx` — shadcn Tabs (instalado 2026-05-13 para `/new`)

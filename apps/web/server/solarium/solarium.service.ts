@@ -49,6 +49,10 @@ export async function getStreak(userId: string) {
 	return streak;
 }
 
+export async function getMaterialByUser(userId: string) {
+	return await solariumRepository.findStudyMaterialByUser(userId);
+}
+
 export async function createSession(
 	userId: string,
 	input: {

@@ -23,6 +23,17 @@ export function findCompletedByUser(userId: string) {
 	});
 }
 
+export function findStudyMaterialByUser(userId: string) {
+	return prisma.studySession.findFirst({
+		where: { userId, status: "ACTIVE" },
+		orderBy: { startedAt: "desc" },
+		include: {
+			folder: { include: { notes: { select: { id: true, title: true, content: true } } } },
+			notes: { select: { id: true, title: true, content: true } },
+		},
+	});
+}
+
 export function create(data: {
 	userId: string;
 	folderIds: string[];

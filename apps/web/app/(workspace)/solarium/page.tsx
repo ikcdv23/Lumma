@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { Cloud, CloudSun, Sun, Zap } from "lucide-react";
 import { auth } from "@/auth";
 import { SkyToday } from "@/components/solarium/sky";
+import { SolariumInfoButton } from "@/components/solarium/solarium-info-button";
 import * as solariumService from "@/server/solarium/solarium.service";
 
 export const metadata = { title: "Solarium" };
@@ -31,6 +32,7 @@ export default async function SolariumPage() {
 				<div className="flex items-center gap-2">
 					<Sun className="size-7 text-amber-500" />
 					<h1 className="text-3xl font-bold tracking-tight">Solarium</h1>
+					<SolariumInfoButton />
 				</div>
 				<p className="text-sm text-muted-foreground">
 					Tu espacio para sesiones de estudio enfocadas
