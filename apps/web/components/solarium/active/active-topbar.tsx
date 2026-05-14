@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import {
+	Check,
 	LayoutGrid,
 	ListTodo,
 	NotebookPen,
@@ -30,6 +31,8 @@ export function ActiveTopbar({
 	onAbandon,
 	abandonPending,
 	elapsedMinutes,
+	isCompleted,
+	onExit,
 }: {
 	title: string;
 	activeTab: Tab;
@@ -37,6 +40,8 @@ export function ActiveTopbar({
 	onAbandon: () => void;
 	abandonPending: boolean;
 	elapsedMinutes: number;
+	isCompleted: boolean;
+	onExit: () => void;
 }) {
 	const [confirmOpen, setConfirmOpen] = useState(false);
 
@@ -45,6 +50,12 @@ export function ActiveTopbar({
 			<div className="flex items-center gap-2">
 				<Sun className="size-5 text-amber-500" />
 				<span className="text-sm font-semibold">{title}</span>
+				{isCompleted && (
+					<span className="ml-1 inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-700">
+						<Check className="size-3" />
+						Completada
+					</span>
+				)}
 			</div>
 
 			<div className="flex flex-1 justify-center">
@@ -70,14 +81,25 @@ export function ActiveTopbar({
 				</div>
 			</div>
 
-			<button
-				type="button"
-				onClick={() => setConfirmOpen(true)}
-				className="flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:border-red-400/60 hover:text-foreground"
-			>
-				<X className="size-4" />
-				Abandonar
-			</button>
+			{isCompleted ? (
+				<button
+					type="button"
+					onClick={onExit}
+					className="flex items-center gap-1.5 rounded-md bg-amber-500 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-amber-600"
+				>
+					<Check className="size-4" />
+					Salir
+				</button>
+			) : (
+				<button
+					type="button"
+					onClick={() => setConfirmOpen(true)}
+					className="flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:border-red-400/60 hover:text-foreground"
+				>
+					<X className="size-4" />
+					Abandonar
+				</button>
+			)}
 
 			<AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
 				<AlertDialogContent>

@@ -8,8 +8,6 @@ import * as solariumService from "@/server/solarium/solarium.service";
 
 export const metadata = { title: "Solarium" };
 
-// TODO: reemplazar por getTodayStudyMinutes(userId) cuando exista en el service
-const TODAY_MINUTES = 0;
 const TARGET = 90;
 
 export default async function SolariumPage() {
@@ -18,9 +16,10 @@ export default async function SolariumPage() {
 
 	const userId = session.user.id;
 
-	const [recentSessions, streak] = await Promise.all([
+	const [recentSessions, streak, todayMinutes] = await Promise.all([
 		solariumService.getRecentSessions(userId, 6),
 		solariumService.getStreak(userId),
+		solariumService.getTodayStudyMinutes(userId),
 	]);
 
 	const hasRecent = recentSessions.length > 0;
@@ -57,7 +56,7 @@ export default async function SolariumPage() {
 
 			{/* HERO — Cielo del día */}
 			<SkyToday
-				todayMinutes={TODAY_MINUTES}
+				todayMinutes={todayMinutes}
 				target={TARGET}
 				streak={streak}
 			/>

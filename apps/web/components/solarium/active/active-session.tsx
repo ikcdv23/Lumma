@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { LayoutGrid, ListTodo } from "lucide-react";
 import {
 	abandonSessionAction,
+	completeSessionAction,
 	createNoteInActiveSessionAction,
+	heartbeatAction,
 } from "@/server/solarium/solarium.actions";
 import { ActiveTopbar } from "./active-topbar";
 import { ComingSoon } from "./coming-soon";
@@ -36,6 +38,8 @@ type Props = {
 	looseNotes: LooseNote[];
 };
 
+const HEARTBEAT_INTERVAL_MS = 45_000;
+
 export function ActiveSession({
 	sessionId,
 	title,
@@ -47,6 +51,7 @@ export function ActiveSession({
 	const router = useRouter();
 	const [isAbandoning, startAbandonTransition] = useTransition();
 	const [isCreatingNote, startCreateNoteTransition] = useTransition();
+
 	const allNotes = useMemo(() => {
 		const list: { id: string; title: string; content: unknown }[] = [];
 		folders.forEach((f) => f.notes.forEach((n) => list.push(n)));
@@ -65,13 +70,32 @@ export function ActiveSession({
 	const [remainingSeconds, setRemainingSeconds] = useState(
 		initialRemainingSeconds,
 	);
+	const [isCompleted, setIsCompleted] = useState(
+		initialRemainingSeconds === 0,
+	);
 
+	// Ref para que el auto-complete solo se dispare una vez aunque el render
+	// vuelva a pasar con remainingSeconds === 0
+	const completionFiredRef = useRef(false);
+
+	// Tick del timer (1s)
 	useEffect(() => {
+		if (isCompleted) return;
 		const id = setInterval(() => {
 			setRemainingSeconds((s) => Math.max(0, s - 1));
 		}, 1000);
 		return () => clearInterval(id);
-	}, []);
+	}, [isCompleted]);
+
+	// Heartbeat cada 45s para que el lazy cleanup no marque la sesión como
+	// ABANDONED. Solo mientras siga ACTIVE (no completada ni abandonando).
+	useEffect(() => {
+		if (isCompleted || isAbandoning) return;
+		const id = setInterval(() => {
+			heartbeatAction(sessionId);
+		}, HEARTBEAT_INTERVAL_MS);
+		return () => clearInterval(id);
+	}, [sessionId, isCompleted, isAbandoning]);
 
 	const minutes = Math.floor(remainingSeconds / 60);
 	const seconds = remainingSeconds % 60;
@@ -81,6 +105,36 @@ export function ActiveSession({
 	const elapsedSeconds = targetSeconds - remainingSeconds;
 	const elapsedMinutes = Math.floor(elapsedSeconds / 60);
 	const progress = (elapsedSeconds / targetSeconds) * 100;
+
+	// Auto-complete cuando el timer llega a 0
+	useEffect(() => {
+		if (remainingSeconds > 0) return;
+		if (completionFiredRef.current) return;
+		completionFiredRef.current = true;
+
+		completeSessionAction(sessionId, targetMinutes, 0).then(() => {
+			setIsCompleted(true);
+		});
+	}, [remainingSeconds, sessionId, targetMinutes]);
+
+	// beforeunload: si el user cierra/refresca con la sesión todavía activa,
+	// disparar un sendBeacon que marque como abandoned con los minutos hechos.
+	// Si ya está completada, no hace falta.
+	useEffect(() => {
+		if (isCompleted) return;
+		const handler = () => {
+			const payload = JSON.stringify({
+				sessionId,
+				studyMinutes: elapsedMinutes,
+			});
+			navigator.sendBeacon(
+				"/api/solarium/abandon",
+				new Blob([payload], { type: "application/json" }),
+			);
+		};
+		window.addEventListener("beforeunload", handler);
+		return () => window.removeEventListener("beforeunload", handler);
+	}, [sessionId, elapsedMinutes, isCompleted]);
 
 	const toggleFolder = (id: string) => {
 		setOpenFolders((prev) => {
@@ -99,6 +153,10 @@ export function ActiveSession({
 			await abandonSessionAction(sessionId, elapsedMinutes, 0);
 			router.push("/solarium");
 		});
+	};
+
+	const handleExit = () => {
+		router.push("/solarium");
 	};
 
 	const handleCreateNote = () => {
@@ -120,6 +178,8 @@ export function ActiveSession({
 				onAbandon={handleAbandon}
 				abandonPending={isAbandoning}
 				elapsedMinutes={elapsedMinutes}
+				isCompleted={isCompleted}
+				onExit={handleExit}
 			/>
 
 			<main className="flex flex-1 overflow-hidden">
@@ -152,6 +212,7 @@ export function ActiveSession({
 				targetMinutes={targetMinutes}
 				elapsedMinutes={elapsedMinutes}
 				progress={progress}
+				isCompleted={isCompleted}
 			/>
 		</div>
 	);

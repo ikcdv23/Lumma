@@ -1,4 +1,4 @@
-import { Minus, Sun } from "lucide-react";
+import { Check, Minus, Sun } from "lucide-react";
 
 export function FloatingTimer({
 	expanded,
@@ -7,6 +7,7 @@ export function FloatingTimer({
 	targetMinutes,
 	elapsedMinutes,
 	progress,
+	isCompleted,
 }: {
 	expanded: boolean;
 	onToggle: () => void;
@@ -14,19 +15,35 @@ export function FloatingTimer({
 	targetMinutes: number;
 	elapsedMinutes: number;
 	progress: number;
+	isCompleted: boolean;
 }) {
 	if (!expanded) {
 		return (
 			<button
 				type="button"
 				onClick={onToggle}
-				className="fixed bottom-6 right-6 flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-4 py-2 shadow-sm transition-colors hover:bg-amber-100"
+				className={
+					isCompleted
+						? "fixed bottom-6 right-6 flex items-center gap-2 rounded-full border border-amber-400 bg-amber-100 px-4 py-2 shadow-sm transition-colors hover:bg-amber-200"
+						: "fixed bottom-6 right-6 flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-4 py-2 shadow-sm transition-colors hover:bg-amber-100"
+				}
 				aria-label="Expandir temporizador"
 			>
-				<Sun className="size-4 text-amber-500" />
-				<span className="text-sm font-semibold text-amber-700 tabular-nums">
-					{timerDisplay}
-				</span>
+				{isCompleted ? (
+					<>
+						<Check className="size-4 text-amber-600" />
+						<span className="text-sm font-semibold text-amber-700">
+							Completada
+						</span>
+					</>
+				) : (
+					<>
+						<Sun className="size-4 text-amber-500" />
+						<span className="text-sm font-semibold text-amber-700 tabular-nums">
+							{timerDisplay}
+						</span>
+					</>
+				)}
 			</button>
 		);
 	}
@@ -37,7 +54,7 @@ export function FloatingTimer({
 				<div className="flex items-center gap-1.5">
 					<Sun className="size-4 text-amber-500" />
 					<span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-						Pomodoro
+						{isCompleted ? "Completada" : "Pomodoro"}
 					</span>
 				</div>
 				<button
@@ -51,18 +68,36 @@ export function FloatingTimer({
 			</div>
 
 			<div className="text-center">
-				<div className="text-5xl font-bold tabular-nums">{timerDisplay}</div>
-				<div className="mt-1 text-xs text-muted-foreground">
-					{targetMinutes} min · {elapsedMinutes} transcurridos
-				</div>
+				{isCompleted ? (
+					<>
+						<div className="mx-auto flex size-14 items-center justify-center rounded-full bg-amber-100">
+							<Check className="size-7 text-amber-600" />
+						</div>
+						<div className="mt-2 text-sm font-semibold">
+							¡Tu cielo brilla un poco más!
+						</div>
+						<div className="mt-1 text-xs text-muted-foreground">
+							{targetMinutes} min cumplidos
+						</div>
+					</>
+				) : (
+					<>
+						<div className="text-5xl font-bold tabular-nums">{timerDisplay}</div>
+						<div className="mt-1 text-xs text-muted-foreground">
+							{targetMinutes} min · {elapsedMinutes} transcurridos
+						</div>
+					</>
+				)}
 			</div>
 
-			<div className="h-1 overflow-hidden rounded-full bg-muted">
-				<div
-					className="h-full bg-amber-400 transition-all"
-					style={{ width: `${progress}%` }}
-				/>
-			</div>
+			{!isCompleted && (
+				<div className="h-1 overflow-hidden rounded-full bg-muted">
+					<div
+						className="h-full bg-amber-400 transition-all"
+						style={{ width: `${progress}%` }}
+					/>
+				</div>
+			)}
 		</div>
 	);
 }

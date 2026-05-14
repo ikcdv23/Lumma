@@ -82,3 +82,19 @@ export function forceMarkAbandoned(sessionId: string, endedAt: Date) {
 		data: { status: "ABANDONED", endedAt },
 	});
 }
+
+export async function sumTodayStudyMinutes(userId: string): Promise<number> {
+	const startOfDay = new Date();
+	startOfDay.setHours(0, 0, 0, 0);
+
+	const result = await prisma.studySession.aggregate({
+		where: {
+			userId,
+			startedAt: { gte: startOfDay },
+			status: { not: "ACTIVE" },
+		},
+		_sum: { studyMinutes: true },
+	});
+
+	return result._sum.studyMinutes ?? 0;
+}

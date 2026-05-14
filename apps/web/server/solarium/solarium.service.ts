@@ -53,6 +53,10 @@ export async function getMaterialByUser(userId: string) {
 	return await solariumRepository.findStudyMaterialByUser(userId);
 }
 
+export function getTodayStudyMinutes(userId: string) {
+	return solariumRepository.sumTodayStudyMinutes(userId);
+}
+
 export async function createSession(
 	userId: string,
 	input: {
