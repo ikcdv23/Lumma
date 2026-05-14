@@ -1,4 +1,4 @@
-# Handoff — actualizado 2026-05-04 (final del dia)
+# Handoff — actualizado 2026-05-14 (cierre tarde)
 
 > Documento para retomar el trabajo en otra maquina o despues de un break. Lee esto **primero**.
 
@@ -18,13 +18,189 @@ Sesiones 2026-05-01 a 2026-05-03:
 - `NewNoteButton` y `SaveFolderButton` extraidos con `useFormStatus`
 - `FolderModal` refactorizado a `<form action>`
 
-Sesion 2026-05-04 (HOY):
-- **Feature de feedback completa** (foro de comunidad con votos y estrellas)
+Sesion 2026-05-04:
+- Feature de feedback completa (foro de comunidad con votos y estrellas)
 - Sidebar reorganizado (Feedback movido al footer)
-- Widths estandarizados a `max-w-5xl` en todas las paginas
-- Lección aprendida sobre `useFormStatus` (debe estar DENTRO del form)
-- **Reflexión estratégica**: descubierto competidor casi idéntico (lumanote.org)
-- **Decisión pendiente**: rebrand de Lumma o seguir como proyecto de aprendizaje
+- Widths estandarizados a `max-w-5xl`
+- Lección: `useFormStatus` debe estar DENTRO del form
+- Descubierto competidor casi idéntico (lumanote.org). Decisión sobre rebrand pendiente
+
+Sesion 2026-05-05:
+- Página de **perfil** completa (`/profile`)
+- Discusión y plan de Sessions/Solarium replanteado (de "Zen Mode" a "Sessions con IA + streak")
+- Idea de admin dashboard documentada (post-MVP)
+- Validación Zod en feedback aceptada como manual (low-risk)
+
+Sesion 2026-05-06:
+- **Solarium completamente diseñado** — la sección de herramientas de estudio. Mockup construido en `/sessions-mockup` con 5 pantallas
+- **Sistema de marca anclado**: Lumma (luz) + Luminita (IA) + clima en calendario
+- **Schema StudySession** diseñado y aplicado en `schema.prisma`
+- **Routing decidido**: `/solarium` en (workspace), `/active` en (solariumspace)
+- **Plan de implementación en 7 fases**
+- Bug del sidebar (empty `<li>` tras revalidatePath) → arreglado
+
+Sesion 2026-05-07:
+- Solarium pusheado a `dev` por error (rompía deploy de Vercel)
+- Resuelto con: nueva rama `feature/solarium` preservada en remoto + `git revert 0344867` en dev → commit `59f0d8e` deshace cambios
+- Editor BlockNote pulido: color claro en lugar de negro, selector de lenguaje estilo "pill" arriba a la derecha, Shiki con 14 lenguajes (TypeScript, JavaScript, Python, Java, C, C++, C#, PHP, Bash, JSON, CSS, HTML, SQL, Markdown)
+- Note detail más ancho (`max-w-3xl` → `max-w-4xl`)
+- **NoteActionsMenu + MoveToFolderDialog**: kebab menu en nota detalle y filas de inbox/home, con "Mover a carpeta" + "Eliminar"
+- Discusión sobre logo profesional (pendiente)
+- Intento de desactivar spellcheck en code blocks → causó loop infinito con ProseMirror → revertido. Decisión: aceptar squigglies por ahora ("opción C")
+
+Sesion 2026-05-08:
+- **Fase 2 cerrada**: Server actions de Solarium completas en `server/actions/solarium-actions.ts`
+  - `createSession`, `heartbeat`, `abandonSession`, `completeSession`, `getActiveSession` (con lazy-cleanup), `getRecentSessions`, `getStreak` (con gracia de 1 día)
+- Schema StudySession enriquecido con campo `title` (default computado: "Sesión del {fecha en español}")
+- Aprendizaje: `String` con mayúscula es la clase wrapper de JS (mal), `string` minúscula es el tipo TS (bien)
+- Conceptos didácticos cubiertos: heartbeat (3 capas defensivas), `updateMany` vs `update` para no lanzar errores, `aggregate` con `_sum`, lazy cleanup como alternativa a cron jobs
+
+Sesion 2026-05-11 (HOY):
+- **Fase 3 estética cerrada**: Hub `/solarium` con visual del mockup (mock data, TODOs marcados para enchufar server actions)
+- **Componentes Sky extraídos** a `components/solarium/sky/`:
+  - `sky-night.tsx` (0 min) — predawn con luna y estrellas
+  - `sky-dawn.tsx` (1-30%) — amanece con sol naranja asomando
+  - `sky-morning.tsx` (30-75%) — paleta amber clásica, sol subiendo
+  - `sky-midday.tsx` (75%+) — sol pleno, paleta saturada
+  - `sky-footer.tsx` — footer compartido (Hoy + minutos + streak + copy)
+  - `sky-today.tsx` — picker que decide qué fase mostrar
+  - Todos aceptan `lowDetail` prop (esconde halos, nubes extra, estrellas extra) — gancho preparado para "low detail mode" futuro
+- **Mockup `/sessions-mockup/sky-states`**: comparación lado a lado full vs lowDetail
+- **Sidebar refactor importante**:
+  - Header con marca: pill amarilla gradient con icono Sparkles + "Lumma" + subtítulo "Notas y estudio"
+  - `SidebarGroupLabel` en lugar de `<span>` para "Herramientas"
+  - Iconos uniformados a `size-4`
+  - Grupo colapsable "Área de estudio" → "Solario" (`SidebarMenuSub`)
+  - **User dropdown en footer** (`SidebarUserMenu` Client Component): avatar (imagen Google o iniciales fallback) + nombre + email + chevron, dropdown con Perfil + Cerrar sesión (variant destructive)
+  - `SidebarMobileAutoClose` ya estaba presente (cierra drawer al navegar en mobile)
+- **`signOutAction()` extraída** a `server/actions/auth-actions.ts` (Client Components no pueden importar `signOut` de NextAuth directamente)
+- **Variant `sidebarMenuSubButtonVariants`** añadido a `components/ui/sidebar-variants.ts`
+- **Componente `collapsible` instalado** vía `pnpm dlx shadcn@latest add collapsible`
+- **Componente `dropdown-menu` instalado** (previamente)
+- Bug recurrente del Slot + Link + asChild: ahora también aplica a `CollapsibleTrigger asChild + SidebarMenuButton`. Solución universal: usar la variante directa sobre `<button>` o `<Link>` plano, sin componentes intermedios que también usen Slot
+- Bug Prisma cliente stale (column `Note.isQuickNote` does not exist) → `pnpm prisma generate` + restart dev. Habría que añadir `predev: prisma generate` al package.json
+
+Sesion 2026-05-12 (HOY):
+- **Refactor a clean architecture de 3 capas** en Solarium — el más importante del día educativamente:
+  - `server/solarium/solarium.repository.ts` — 7 funciones de acceso a datos (find/create/update/delete), filtrando siempre por `userId`. Cero auth, cero lógica de negocio
+  - `server/solarium/solarium.service.ts` — 7 funciones de lógica de negocio (idempotencia en `createSession`, lazy cleanup en `getActiveSession`, algoritmo de streak en `getStreak`). Recibe `userId`, llama al repo, lanza errores tipados cuando hace falta
+  - `server/solarium/solarium-actions.ts` — 4 mutaciones (`createSessionAction`, `heartbeatAction`, `abandonSessionAction`, `completeSessionAction`) finas. Solo `auth()` + llamada a service + `revalidatePath`. Las 3 lecturas se eliminan de actions — los Server Components llaman directo al service
+  - Helper `getAuthedUserId` extraído en `lib/auth-helpers.ts` (pendiente, ahora vive en actions)
+  - Patrón aprendido: services **no se llaman entre sí**. La orquestación cross-feature se hace en la action o en una capa superior. Cross-feature READ se hace contra el repository de la otra feature, nunca contra su service
+  - Concepto de "tela de araña de dependencias" (dependency web) interiorizado tras conversación con senior
+- **Fase 3 cerrada**: `solarium/page.tsx` enchufada con datos reales (`getRecentSessions`, `getStreak`) vía `Promise.all`. Helper `formatWhen()` añadido para fechas relativas en español. `TODAY_MINUTES` sigue mock con TODO (falta `getTodayStudyMinutes(userId)`).
+- **Documento de referencia creado**: `docs/concepts/arquitectura.md` — guía consulta de las 3 capas, comunicación entre ellas, antipatrones, indicadores visuales rápidos, "test del cron", convenciones de nombrado. Pensado para consultar sin tener que reaprender.
+- **Estudio del proyecto profesional Fabrika** en `/home/javier/Proyectos/Fabrika/` para extraer patrones reales de empresa madura. Conclusión: aplicar la versión "right-sized" (3 capas planas por feature) — Fabrika tiene capa `useCase/` separada pero sería overkill para Lumma hoy. En Lumma, las Server Actions cumplen ese rol.
+- **Decisiones UX para Solarium MVP cerradas** (ver sección dedicada abajo):
+  - CTA del hub: **"Empezar a estudiar"** (no "Iniciar sesión", choca con auth)
+  - **NO existe "Reanudar"** — filosofía Zen estricta: si entras te quedas, si te vas la sesión se cierra (los minutos cuentan, sin penalty)
+  - **Popup de abandono** en `/active` cuando intentes navegar fuera (Fase 5)
+  - **Solarium** elegido sobre "Solario" (consistencia código-UI). Reconocida deuda de branding global (Home/Inicio, Folder/Carpetas) → ticket aparte
+  - Recent sessions **siguen clickables** (cursor-pointer intencional) — futura "ficha técnica" de sesión
+  - Excluir sesiones ACTIVE de `findRecentByUser`
+  - Streak=0 → ocultar pill o copy motivadora (pendiente decidir)
+  - `/active` timer: patrón **"30 min restantes / 30 de 60 hechos"** (motivación + contexto, estilo Apple Activity Rings)
+- **Lumma es desktop-first**, mobile responsive no es prioridad. Aceptado.
+- **Coherencia visual cross-feature** (radios, espaciado, tipografía, idioma UI) → diferida a "Rebranding pass" post-Solarium MVP, ticket separado
+- **Email reset (forgot password) diferido**: necesita dominio propio + provider (Resend recomendado, free tier 3.000/mes). Sin dominio aún, en standby
+- **Rama paralela `feature/LUMMA-02-Change-password` mergeada via PR #1**:
+  - Descubierto que el cambio de contraseña **ya estaba implementado** en `dev` (action `updatePassword` + form + sección en `/profile`)
+  - Implementado **eliminar cuenta** con confirmación: `deleteAccountSchema` (requiere literal `"ELIMINAR"`), action `deleteAccount` (verifica password si es credentials, cascade automático del schema, signOut+redirect), componente `profile-delete-form.tsx` con `Dialog`, sección "Zona peligrosa" en perfil
+  - PR creado: https://github.com/ikcdv23/Lumma/pull/1 (target `dev`)
+
+Sesion 2026-05-13 (HOY):
+- **Modelo de sesión modular** — pivotal: Solarium ya no es "una carpeta + duración". Es **session builder**: el usuario combina materiales (carpetas o notas individuales) + duración. A futuro se sumarán modo (Pomodoro/cronómetro), herramientas (Kanban/tasks) e IA (flashcards al final).
+- **Schema migrado a many-to-many real**:
+  - `folderId String?` (1:1) eliminado de StudySession
+  - `folder Folder[]` + `notes Note[]` añadidos (M:N implícita)
+  - En `Folder`: `studySessions StudySession[]` (backref ya existía)
+  - En `Note`: añadido `studySessions StudySession[]` (después de un intento mal donde quedó como 1:N)
+  - 2 migraciones aplicadas: `20260513064704_modular_session_materials` + `20260513065637_fix_note_many_to_many` (la segunda corrige el intento erróneo)
+  - Tablas join creadas: `_FolderToStudySession` y `_NoteToStudySession`
+- **Backend actualizado a la firma modular**:
+  - `repo.create` recibe `{ folderIds[], noteIds[] }`, conecta via Prisma `connect`
+  - `service.createSession` valida que carpetas Y notas pertenezcan al usuario antes de crear
+  - `action.createSessionAction` recibe el objeto `{ title, folderIds, noteIds, targetMinutes }`
+  - **Excluida de recent sessions** la query las sesiones `status: ACTIVE` (cleanup Tier 1)
+- **Página `/solarium/new` construida** (Fase 4 cerrada):
+  - Server Component fetch carpetas (con sus notas) + 50 notas más recientes en `Promise.all`
+  - Tabs Carpetas/Notas (shadcn `Tabs` instalado)
+  - Multi-selección por click en cards
+  - Chips duración 25/50/90 min
+  - Botón "Empezar a estudiar" con `useTransition` pending state → redirect a `/active`
+- **Modal "ver notas de carpeta"** (Opción D del audit UX):
+  - Botón `[⋯]` aparece en cada carpeta seleccionada (no en las no seleccionadas)
+  - Click abre Dialog con todas las notas de esa carpeta
+  - Cada nota tiene botón toggle "Quitar"/"Incluir"
+  - Estado `excludedNoteIds: Set<string>` mantiene exclusiones en cliente
+  - **Carpeta sigue marcada** aunque excluyas notas (la marca representa "intención de estudiar este tema", no es atómica con sus notas)
+  - Notas implícitas (en folder seleccionado, no excluidas) aparecen disabled con check gris en tab "Notas"
+  - Notas excluidas vuelven a estado normal (pueden seleccionarse explícitamente)
+  - Al submit: se resuelve `finalNoteIds = explícitas ∪ (notas de folders − excluidas)` y se persiste en BD
+- **Identidad visual de Solarium definida** (acabamos con el "vibecoded look"):
+  - Reglas escritas: amber-500 como acento, `border-amber-400 + bg-amber-50/50 + ring-1` como selección, sin gradients en botones, sin shadow-2xl, sin translate-y en hover, `transition-colors` en lugar de `transition-all`
+  - Anchos consistentes con resto de la app: `max-w-5xl`, `p-6 md:p-8`, `gap-8`
+  - Header del hub: icono `Sun` ámbar + título "Solarium" (consistente con patrón de `/feedback`, `/folders`, etc.)
+  - Botón CTA: `bg-amber-500 hover:bg-amber-600 text-white` (sin gradient, sin shadow extra)
+  - Sky components mantienen gradients/blur — son metáfora visual del cielo, justificados
+- **Bug fix sidebar recurrente**: encontrado de nuevo el patrón `CollapsibleTrigger asChild + <button>` que rompe en revalidatePath. Fix definitivo: usar `CollapsibleTrigger className={...}` directo, sin asChild. Regla: nunca `asChild` con un elemento HTML plano dentro — solo cuando metes un componente complejo (Link de Next, etc).
+- **Fix de seguridad en `feedback-actions.ts`**: `toggleFeedbackVote` usaba `prisma.feedbackPost` en lugar de `prisma.feedbackVote` en 3 sitios. Bug preexistente que se hizo visible al regenerar el client Prisma. Arreglado.
+- **Fix arquitectónico — JWT-DB sync** (commit `f26d229` añadido a PR #1):
+  - Antes: si borrabas un user (via `deleteAccount`, GDPR, admin) pero seguía con JWT activo en otro device → middleware le dejaba pasar y todas las mutaciones fallaban con FK violation
+  - Ahora: callback `jwt` en `auth.ts` verifica que el user existe en BD; si no, devuelve `null` y la sesión se invalida
+  - Coste: 1 query Prisma extra por session check (negligible)
+- **`vercel.json` añadido** en `apps/web/vercel.json` con `ignoreCommand` que solo permite builds para ramas `dev` y `main`. Las demás se saltan → no se consumen build minutes inútilmente
+- **Memoria guardada**: workflow `gh auth switch` para resolver permisos 403 al pushear (cuando la cuenta `javieralc-kuik` está activa en lugar de `ikcdv23`). Autónomo a partir de ahora.
+- **Cleanup aplicado**:
+  - `getAuthedUserId` movido de `solarium.actions.ts` a `lib/auth-helper.ts` (centralizado para cambios futuros tipo 2FA, rol, rate limiting)
+  - `solarium-actions.ts` → `solarium.actions.ts` (con punto, consistente con `.service.ts` y `.repository.ts`)
+  - shadcn `Tabs` instalado (`pnpm dlx shadcn@latest add tabs`)
+  - Archivos vacíos `(solariumspace)/active/page.tsx` y `/layout.tsx` con stubs default export (estaban rompiendo Next typegen)
+  - Mockup folder-picker buttons (death-row code) parcheados con `!` para que compile sin warnings (siguen marcados para borrar en Fase 7)
+
+Sesion 2026-05-13 (mañana siguiente — Fase 5 arrancada):
+
+- **Botón de info en hub Solarium**: `components/solarium/solarium-info-button.tsx`. Icono `Info` en el header (al lado del título), abre Dialog con 3 pasos (Material → Duración → Empezar) + nota sobre cielo del día y racha. Pensado para onboarding silencioso. Colocado en [solarium/page.tsx:34](apps/web/app/(workspace)/solarium/page.tsx#L34).
+- **Decisión de producto importante para `/active`** (cambia el alcance de Fase 5):
+  - **`/active` se convierte en workspace multi-tool** con tabs en horizontal: `[📝 Notas] [✓ Tareas] [▦ Tablero]`. La Notas tab muestra sub-sidebar de material + editor BlockNote inline.
+  - **Tareas y Tablero salen como "Próximamente" en MVP** — el shell visual con las tres tabs queda hecho, pero solo Notas funciona. Sin schema nuevo (`SessionTask`, `BoardColumn`, etc.) hasta validar uso real.
+  - **Timer flotante** en lugar de timer en topbar o pantalla completa. Estado colapsado (pildora `42:17` en bottom-right) y expandido (card con número grande, progreso, botón Completar). Botón `−` recolapsa. Position: bottom-right.
+  - **Empty state material**: si no hay carpetas ni notas, sub-sidebar muestra "Sesión libre" + botón "Crear nota nueva en esta sesión".
+- **Maqueta interactiva en `/mockup`** (`app/(solariumspace)/mockup/page.tsx`): hardcoded, full Client Component, sirve como referencia visual cuando portemos a `/active` real. Incluye tabs funcionales, expand/collapse de carpetas, selección de nota activa (ámbar), placeholder de BlockNote, ComingSoon para tabs no implementadas, FloatingTimer en sus dos estados. Borrable cuando `/active` esté terminada.
+- **`/active/page.tsx` esqueleto**: Server Component `async` con auth + `getActiveSession` + guards (`redirect("/login")` si no hay user, `redirect("/solarium")` si no hay sesión activa). Falta la UI real (portar maqueta) y el include del material (carpetas+notas) en el repo.
+- **`getMaterial` añadido al service** como passthrough válido. **Action `getMaterialAction` debe borrarse** — es lectura desde Server Component, no cruza frontera cliente↔servidor. Decisión cerrada en chat, pendiente de aplicar.
+- **Conceptos didácticos cubiertos en la sesión**:
+  - **Promise**: valor del futuro. `await` desempaqueta. `async` permite usar `await` dentro. En Server Components, marcar la función como `async` directamente.
+  - **Server Component vs Action**: regla "actions son frontera cliente↔servidor, no capa de coherencia". Si la llamada no cruza la frontera, la action sobra. Service sí se mantiene aunque sea passthrough (coherencia + punto de extensión + test target).
+  - **SRP en repo**: cada función responde una sola pregunta. **No fusionar** `findActiveByUser` con búsqueda por id — son dos casos de uso distintos (sesión activa actual vs ficha técnica). Añadir `findByIdForUser(sessionId, userId)` separada cuando llegue la ficha técnica.
+  - **Layouts y children**: `{children}` es prop especial. Layouts en App Router envuelven sus rutas hijas, Next inyecta la página como `children`. Route group `(solariumspace)` existe para dar layout distinto (sin sidebar workspace) sin cambiar la URL.
+
+Sesion 2026-05-14 (jornada larga — Fase 5 casi cerrada):
+
+- **Split arquitectónico de `ActiveSession`** en 6 componentes focados bajo `components/solarium/active/`:
+  - `active-session.tsx` — coordinador (state + layout, ~125 líneas)
+  - `active-topbar.tsx` — topbar con tabs + AlertDialog de abandono (TabButton inline)
+  - `material-sidebar.tsx` — sub-sidebar de carpetas + notas sueltas + botón "Nueva nota" (NoteItem inline)
+  - `active-note-editor.tsx` — wrapper que usa `<EditableNote>` reusable
+  - `floating-timer.tsx` — pildora / panel expandido (sin botón Completar — decisión consciente)
+  - `coming-soon.tsx` — placeholder para Tareas/Tablero
+- **`EditableNote` extraído** en `components/notes/editable-note.tsx`: state (title, blocks, saveStatus) + autosave debounce 500ms + input editable + BlockNote dynamic + callback `onSaveStatusChange`. Reusado por `NoteDetailClient` y `ActiveNoteEditor`. Consumer pone su chrome alrededor.
+- **`/active` con datos reales**: Server Component fetch material → resolución de folders + looseNotes (filtro por `sessionNoteIds`) + cálculo de `initialRemainingSeconds` desde `startedAt`. Sub-sidebar muestra "Sesión libre" si no hay material.
+- **Bug crítico arreglado — editor cross-contamination**: al cambiar de nota en sidebar, el editor sobreescribía contenido de otras notas. Causa: `EditableNote` no se remontaba al cambiar prop, el state local mantenía bloques anteriores + autosave los persistía con el nuevo id. Fix: `key={selectedNote.id}` en `<EditableNote>` desde `ActiveNoteEditor`. Aprendizaje: el `key` es la herramienta exacta cuando un componente tiene identidad ligada a una entidad.
+- **CSS BlockNote en `(solariumspace)/layout.tsx`**: el editor en `/active` se veía sin estilos. Causa: `@blocknote/mantine/style.css` solo estaba importado en `(workspace)/layout.tsx`. Lección: cada layout en App Router es su propio "mundo CSS"; si una librería carga CSS lateral, hay que importarlo en cada layout consumidor.
+- **`requireAuthedUserId` añadida a `auth-helper.ts`**: variante que redirige a `/login` internamente. Return type `Promise<string>` (no nullable) porque `redirect()` tiene return `never`. Para Server Components donde el `if` boilerplate sobra. Convivencia: `getAuthedUserId` para actions, `requireAuthedUserId` para pages.
+- **Botón "Abandonar"** del topbar enchufado: AlertDialog con "Quedarme" / "Sí, abandonar" (rojo). Muestra minutos transcurridos en el copy. Dispara `abandonSessionAction` + redirect. `useTransition` para "Saliendo..." pending state.
+- **Botón "Nueva nota en esta sesión"** enchufado: action `createNoteInActiveSessionAction()` que crea note vacía + connect M:N a sesión activa. Cliente hace `setSelectedNoteId(created.id)` + `router.refresh()` para traer material actualizado. Smell consciente: action toca `prisma.note.create` inline (no hay capa de service para notes todavía) — documentado en deuda técnica.
+- **Aviso "beta"** añadido al `SolariumInfoButton`: chip ámbar al título + bloque al final mencionando funciones por venir (pomodoro con pausas, drag & drop, crear carpetas).
+- **Refactor folder-feature CRUD (deuda)**: confirmado que `/new/page.tsx` toca `prisma.folder.findMany` y `prisma.note.findMany` directamente (capa única legacy). Se mantiene por ahora; ticket de migración a 3 capas en "Donde retomar".
+- **Conceptos cubiertos en la sesión**:
+  - **Regla de los Hooks**: `useState`/`useEffect` identificados por **posición**, no por nombre. Llamarlos condicionalmente destroza la memoria de React. Siempre arriba del componente.
+  - **`key` para forzar remount**: patrón cuando un componente tiene state ligado a la identidad de una entidad.
+  - **`redirect()` y narrowing**: return type `never` permite que TS sepa que el código después no se ejecuta. Habilita helpers como `requireAuthedUserId`.
+  - **Route groups y CSS scope**: cada layout es un árbol CSS aparte.
+  - **Smells con disciplina**: identificar, anotar como deuda, aplazar refactor con ticket. No parchear.
+  - **Lifting state up + props drilling**: state en el coordinador, hijos reciben props y disparan callbacks.
+  - **Function types**: `() => void`, `(id: string) => void` — describir contratos sin implementación.
 
 ---
 
@@ -128,22 +304,109 @@ model Note {
 ### ✅ Funciona
 
 - Auth con password (Zod + bcrypt) y Google OAuth
-- CRUD completo de carpetas (con `SaveFolderButton` y loading state)
-- CRUD basico de notas
+- CRUD completo de carpetas
+- CRUD completo de notas (con BlockNote, Shiki, kebab menu para mover/eliminar)
 - `/home` con FastNotes (autosave funcional), Inbox pill, folder pills, notas recientes
-- `/inbox` lista quick notes
+- `/inbox` lista notas sin carpeta
 - `/folders` y `/folders/[folderId]` con breadcrumbs
-- `/notes/[noteId]` editor con BlockNote (parcial pero usable)
-- `/feedback` foro completo con votos y estrellas (NUEVO HOY)
+- `/notes/[noteId]` editor BlockNote con code blocks claros (14 lenguajes via Shiki) y kebab menu
+- `/feedback` foro completo con votos y estrellas
+- `/profile` perfil completo (avatar, nombre editable, cambio de contraseña, eliminar cuenta con confirmación — en PR #1, pendiente merge)
+- `/solarium` hub **funcional con datos reales** (recent sessions + streak desde DB, solo TODAY_MINUTES sigue mock)
+- `/sessions-mockup/sky-states` mockup comparativo de fases del cielo + low detail (a borrar en Fase 7)
+- **3 capas de Solarium** (`server/solarium/`) — repository + service + actions limpias, patrón documentado en `docs/concepts/arquitectura.md`
+- Sidebar pulido con header brand, grupo colapsable, user dropdown footer
 - Despliegue Vercel + Neon
 
-### ❌ Sin empezar
+### ⏳ A medio terminar (Solarium)
+
+- **Fase 3 (hub)**: ✅ enchufada 2026-05-12. Pendiente: crear `getTodayStudyMinutes(userId)` para reemplazar la constante `TODAY_MINUTES = 0`. Patrón sugerido: `prisma.studySession.aggregate({ _sum: { studyMinutes: true } })` filtrando por `startedAt >= startOfDay` y status != ACTIVE
+- **Fase 4 (`/solarium/new`)**: ✅ cerrada 2026-05-13. Selector multi-material (carpetas + notas independientes) + modal de exclusión + chips duración + botón "Empezar a estudiar" con pending state. Persiste `folderIds` (M:N) y `noteIds` (resuelto: explícitas ∪ folder.notes − excluidas)
+- **Fase 5**: `(solariumspace)/layout.tsx` y `/active/page.tsx` con stubs. La más densa:
+  - Timer con patrón "X min restantes / X de Y hechos"
+  - Heartbeat client cada 30-60s
+  - `beforeunload` + `sendBeacon` para detección de cierre
+  - **Popup de abandono custom** para navegación interna (sidebar clicks, etc.) con `AlertDialog` + navigation guard via `useRouter`
+  - Sub-sidebar de notas accesibles (`noteIds` de la sesión activa)
+  - Estado de pausa/resume interno (modo Pomodoro visual)
+- **Fase 6**: result interno (estado de /active con celebración) antes de redirigir al hub
+- **Fase 7**: borrar `/sessions-mockup` entero + revisar item "Solarium" definitivo en sidebar
+
+### 🧹 Cleanup Tier 1 UX (todos hechos 2026-05-13)
+
+- ✅ CTA "Iniciar sesión" → **"Empezar a estudiar"** en `solarium/page.tsx`
+- ✅ TODO añadido en `RecentSessionCard` sobre futura ficha técnica clickable
+- ✅ "Solario" → "Solarium" en UI
+- ✅ Excluido status ACTIVE de `findRecentByUser` en repo
+- ⏳ Streak=0 — pendiente decidir (ocultar pill vs copy motivadora)
+- ✅ `getAuthedUserId` movido a `lib/auth-helper.ts`
+- ✅ Borrar `app/(workspace)/debug/page.tsx` (ya no existía)
+- ✅ Borrar `server/actions/solarium-actions.ts` viejo (ya no existía)
+- ✅ Renombrado `solarium-actions.ts` → `solarium.actions.ts` (consistencia con `.service.ts`, `.repository.ts`)
+
+### ❌ Sin empezar / pendiente
 
 - Rate limiting en server actions (CRÍTICO si abres a usuarios reales)
-- Validación con Zod en `createFeedbackPost` (rating fuera de 1-5, content sin maxLength server-side)
 - Verificación email con Mailtrap (plan en `auth-with-password.md`)
-- Auto-delete de notas (campo añadido pero sin lógica)
-- Página de perfil del usuario (`/profile`) — no existe, el bloque del footer es decorativo
+- **Email reset password** — Resend recomendado, free tier 3.000/mes, requiere dominio propio. En standby hasta tener dominio
+- **Ticket: Rebranding pass post-Solarium** — coherencia visual cross-feature: tipografía/spacing/radios consistentes, idioma UI (todo español o todo inglés, decidir), paleta de colores cross-feature, rebrand sidebar
+- **Ticket: ficha técnica de sesión** — `RecentSessionCard` hoy es decorativo. Futura ruta `/solarium/sessions/[id]` con detalle: cuándo empezó, cuándo terminó, qué notas tocó, qué notas creó, duración real vs target. Mantener el `cursor-pointer` en las cards es señal preparada para esto
+- Auto-delete de notas (campo eliminado del schema en cleanup)
+- **Logo profesional** — actualmente placeholder `Sparkles` amarillo en pill gradient. Cuando se cierre Solarium MVP, contratar diseñador / generar con IA / iterar en Figma
+- **Active route highlighting** en sidebar (requiere convertir parte a Client Component con `usePathname()`)
+- Decisión sobre rebrand de Lumma vs LumaNote (lumanote.org)
+- Estado activo de la ruta actual en sidebar (los nav items no destacan cuando estás en ellos)
+- Spike `/lab/flashcards` para validar IA (paralelo, no bloquea Solarium MVP)
+- Cleanup: borrar `home-client.tsx` huerfano si sigue ahí
+- **Modales de confirmación para acciones destructivas** — actualmente las eliminaciones (nota, carpeta, post de feedback, futuras de sesión) usan `window.confirm()` nativo del navegador. Pendiente reemplazar por `AlertDialog` de shadcn (`pnpm dlx shadcn@latest add alert-dialog`). Sitios afectados: `components/notes/note-actions-menu.tsx`, eliminar carpeta en `folder-actions`, eliminar post de feedback. Mejora la UX y permite mostrar info contextual ("vas a eliminar 12 notas dentro de esta carpeta", etc.)
+
+---
+
+## Reglas UX cerradas para Solarium MVP (2026-05-12)
+
+Decididas conscientemente tras auditoría de UX. Aplicar en Fases 4-6.
+
+### Filosofía global
+
+**Solarium es Zen Mode estricto**. Una vez entras a una sesión, te quedas hasta el final, o te vas y la sesión se cierra. No hay "pausar y reanudar entre tabs". El tiempo estudiado SIEMPRE cuenta — sin penalty por abandonar.
+
+> Si has elegido tu plan, notas, herramientas, tiempo... ¿qué se te ha perdido fuera de tu lugar de estudio? La app te ayuda a concentrarte, no a multitarea.
+
+### Estados del hub (`/solarium`)
+
+| Situación | Comportamiento |
+|---|---|
+| Sin sesión activa | CTA "Empezar a estudiar" → `/solarium/new` |
+| Con sesión ACTIVE (caso edge) | NO se llega aquí normalmente. Si pasa: redirect a `/active`. NUNCA mostrar botón "Reanudar" |
+| Sesiones recientes | Solo COMPLETED y ABANDONED (excluir ACTIVE). Cards clickables (cursor-pointer intencional para futura ficha técnica) |
+| Streak = 0 | Ocultar pill o cambiar copy a motivadora (pendiente decidir) |
+
+### Página activa (`/active`) — Fase 5
+
+| Aspecto | Decisión |
+|---|---|
+| Layout | Sin sidebar (route group `(solariumspace)`) |
+| Cierre de pestaña / refresh | `beforeunload` nativo del navegador + `sendBeacon` a `abandonSessionAction` |
+| Navegación interna (Link, sidebar) | **Popup custom de confirmación** con `AlertDialog` de shadcn + navigation guard via `useRouter` |
+| Copy del popup | "¿Seguro que quieres romper la sesión? Llevas X min" |
+| Si confirma | `abandonSessionAction(sessionId, studyMinutes, breakMinutes)` → libre para navegar |
+| Si cancela | Sigue en `/active` |
+| Lazy cleanup backend | Si lastSeenAt > 2 min, `getActiveSession` marca como ABANDONED (red flaky, navegador cerrado sin beacon) |
+| Display del timer | "30 min restantes" (grande) + "30 de 60 hechos" (debajo, contexto) — patrón Apple Activity Rings |
+
+### Naming consistente
+
+- En código y URLs: `solarium` (inglés)
+- En UI: **"Solarium"** (decidido sobre "Solario")
+- Deuda asumida: el resto de la app mezcla idiomas (Home/Inicio, Folder/Carpetas). Se resolverá en el ticket de Rebranding pass
+
+### Lo que NO está en MVP
+
+- ❌ Botón "Reanudar"
+- ❌ Pausa explícita dentro de la sesión (Pomodoro es visual solo)
+- ❌ Multi-tab con misma sesión
+- ❌ Edición de duración a mitad
+- ❌ Modo móvil optimizado (desktop-first, móvil acepta degradar)
 
 ---
 
@@ -205,9 +468,46 @@ Tipo error: `Invalid prisma.note.count() invocation: The column 'Note.isQuickNot
 3. **ANTES de pushear**: cambiar `.env` a Neon, `pnpm prisma migrate deploy`, revertir `.env`
 4. Push
 
-### 3. Hydration warning en Sidebar
+### 3. Sidebar items vacíos tras `revalidatePath` (RESUELTO 2026-05-06)
 
-Causa: combinación Radix `Slot` + Next `<Link>` + `asChild` produce mismatch SSR/cliente. Conocido. **No tiene fix limpio**, decidimos aceptar el warning (es recoverable, solo en dev console, no afecta producción).
+Causa: combinación Radix `Slot` + Next `<Link>` + `asChild` no era solo un warning de hydration silenciable — provocaba que los `<li>` del menú quedaran VACÍOS (sin children, `clientHeight: 0`) tras `revalidatePath` (al borrar carpetas, editar notas, redimensionar imágenes, etc.). El `suppressHydrationWarning` ocultaba el síntoma pero el bug afectaba producción.
+
+**Fix aplicado**: refactorizar los menu items del sidebar para no usar `asChild` + Slot — el `<Link>` es ahora directamente el botón con sus clases inline (via `sidebarMenuButtonVariants()` y `sidebarMenuSubButtonVariants()`). Adiós Slot, adiós bug.
+
+**Lección**: cuando `suppressHydrationWarning` se usa como band-aid, sigue investigando — puede estar ocultando algo serio. Y **NO es solo console noise**, también puede romper la UI en silencio.
+
+### 4. Mismo bug del Slot pero con `CollapsibleTrigger asChild + SidebarMenuButton` (RESUELTO 2026-05-11)
+
+Misma raíz que el bug 3. `CollapsibleTrigger asChild` (Slot) → `SidebarMenuButton` (que usa Slot internamente) → cadena `Primitive.button.Slot → Primitive.button.SlotClone` que React 19 + Turbopack no reconcilia bien.
+
+**Fix**: cambiar `<SidebarMenuButton>` por `<button type="button" className={sidebarMenuButtonVariants()}>`. Regla universal: cuando tengas un componente Radix con `asChild`, mete dentro un elemento HTML plano (`<button>`, `<Link>`, `<a>`) con clases via variant, NUNCA otro componente que pueda usar Slot.
+
+### 5. MutationObserver loop infinito en BlockNote spellcheck (REVERTIDO 2026-05-07)
+
+Intentamos desactivar el spellcheck en code blocks con un `MutationObserver` que ponía `spellcheck="false"` en cada `<code>`. Cada `setAttribute` disparaba ProseMirror's reconciliador, que regeneraba nodos, lo que disparaba el observer otra vez. Loop hasta congelar la pestaña.
+
+**Estado**: revertido. Aceptamos squigglies en code blocks como cosmético menor. Si se retoma: investigar BlockNote `editorProps` de ProseMirror o sobrescribir `createCodeBlockSpec` para añadir el atributo en su render inicial.
+
+### 6. Prisma client stale tras cambio de rama (RECURRENTE)
+
+Síntoma: `The column 'Note.isQuickNote' does not exist in the current database`. Causa: cambias de rama (p.ej. `dev → feature/solarium`), el schema cambia, pero `apps/web/generated/prisma/` sigue siendo el de la rama anterior.
+
+**Fix**: `cd apps/web; pnpm prisma generate` y reiniciar dev server.
+
+**Mejora futura**: añadir `"predev": "prisma generate"` al `package.json` de `apps/web` para automatizar.
+
+### 7. Git mess Solarium revert + revert-of-revert (RESUELTO 2026-05-07/2026-05-11)
+
+Solarium se pusheó a dev por error (commit `0344867`), rompía Vercel build. Hicimos:
+1. `git checkout -b feature/solarium` para preservar el trabajo
+2. `git revert 0344867` en dev → commit `59f0d8e`
+3. Pero el revert acabó también en feature/solarium local
+4. Push posterior pisó remoto con el revert
+5. Recuperación con `git revert 59f0d8e` (revert-of-revert) → commit `c73c24f` re-aplica Solarium
+
+Resultado final: `feature/solarium` tiene historia "fea pero honesta" (add → revert → reapply). Cuando se mergee a dev, hacer `git merge --squash` para limpiar.
+
+**Lección**: antes de hacer `git push` confirma en qué rama estás (`git branch --show-current` o configurar prompt con git). El upstream de la rama local puede no coincidir con el nombre.
 
 ---
 
@@ -349,17 +649,70 @@ docker compose up -d
 
 Por orden de prioridad:
 
-1. **Sessions (feature diferenciador)** — ver sección dedicada al final del handoff. Próximos pasos concretos:
-   - Definir qué es "sesión completada" (Javier)
-   - Prototipo IA en `/lab/flashcards`
-   - UX del MVP en papel/Figma
-2. **Cleanup schema**: eliminar `isQuickNote`, `autoDeleteAfterDays`, `edited`, `updatedAt` de FeedbackPost. Migración local + Neon.
-3. **Cleanup código**: borrar `home-client.tsx` huerfano, mockups si ya no sirven
-4. **Rate limiting** en server actions (CRÍTICO antes de abrir a más usuarios)
-5. **Decisión sobre rebrand**: cambiar de "Lumma" a otro nombre por el conflicto con Luma
-6. Verificación email con Mailtrap
-7. ~~Página de perfil~~ — ✅ hecha 2026-05-05
-8. ~~Validación con Zod en feedback-actions~~ — Javier optó por validación manual con `if`, decisión consciente para low-risk feature
+1. **Próxima sesión — peticiones explícitas del user (2026-05-14)**:
+   - **Recuento de tiempo invertido**: agregar minutos estudiados al hub (`TODAY_MINUTES` real). El tiempo cuenta **igual** si la sesión se completa o se abandona. Patrón: `prisma.studySession.aggregate({ _sum: { studyMinutes: true } })` filtrando por `startedAt >= startOfDay` y `status != ACTIVE` (es decir COMPLETED ∪ ABANDONED). Crear `getTodayStudyMinutes(userId)` en `solarium.repository.ts` + service. Enchufar en hub `/solarium/page.tsx` reemplazando `TODAY_MINUTES = 0`.
+   - **Tiempo extra estilo Forest** (futuro post-prod beta): cuando el timer llega a 0 y se auto-completa, ofrecer al user opciones "+10 min" / "+25 min" / "Salir ya" en lugar de cortar. Cada extensión suma a `studyMinutes` y mantiene la sesión activa hasta que el user decida salir. Respeta el flow mental. Sin schema nuevo necesario (se reutiliza `targetMinutes` como "lo prometido" y `studyMinutes` como "lo realmente hecho" — el segundo puede superar al primero). Opcionalmente añadir columna `extensions: Int @default(0)` para estadística futura ("esta semana extendiste 5 sesiones").
+   - **Crear carpetas dentro de la sesión activa**: desde el sub-sidebar de material en `/active`, botón "Nueva carpeta" análogo al "Nueva nota". Action `createFolderInActiveSessionAction()` siguiendo el mismo patrón (con mismo smell que la otra: ver deuda técnica nº 7 abajo). Service lookup `solariumService.getActiveSession` para validar pertenencia + crear folder + connect M:N a `studySession.folder`.
+   - **Drag & drop de notas a carpetas**: dentro de la sesión activa, poder arrastrar una nota de "Notas sueltas" a una carpeta o entre carpetas. Librería sugerida: `@dnd-kit/core` (más ligera y accesible que react-dnd). Cada nota necesita `useDraggable`, cada carpeta `useDroppable`. Action `moveNoteToFolderAction(noteId, folderId | null)` que actualiza el `folderId` de la nota. Considerar feedback visual durante el drag (opacidad, drop zones resaltadas en ámbar).
+2. **Solarium Fase 5 — pendientes para cerrar la fase** (tras lo de arriba):
+   - **Heartbeat**: `useEffect` en `ActiveSession` con setInterval cada 45s → `heartbeatAction(sessionId)`. Sin esto, lazy cleanup marca abandoned a los 2 min.
+   - **`beforeunload` + `sendBeacon`** para cierre/refresh — dispara abandono con minutos transcurridos.
+   - **AlertDialog de navegación interna**: el botón "Abandonar" del topbar YA tiene su AlertDialog. Falta interceptar clicks en `<Link>` externos a `/active` para mostrar el mismo diálogo (navigation guard global).
+   - **Botón Completar** y AlertDialog que ofrezca "completar como exitosa" (cuando el timer llega a 0 o el user lo decide manualmente).
+   - **Decisión pendiente**: persistir tab activa con `searchParams` (?tab=notas) o localStorage.
+   - Borrar `/mockup` cuando `/active` esté terminado del todo.
+3. **PR #1 merge a `dev`** — eliminar cuenta + change password + fix JWT-DB sync. https://github.com/ikcdv23/Lumma/pull/1. Bloquea limpieza del workflow git.
+3. **Solarium Fase 6 — Result interno**: estado de celebración dentro de `/active` antes de redirigir
+4. **Solarium Fase 7 — Cleanup final**:
+   - Borrar `app/(workspace)/sessions-mockup/` completo (incluye los mockup files de solarium/folder-picker-button, abandon-button, save-as-template-button, templates-section)
+   - Revisar el item "Solarium" en sidebar (vive en collapsible "Herramientas" → "Área de estudio")
+5. **Crear `getTodayStudyMinutes(userId)`** en repo + service para enchufar `TODAY_MINUTES` del hub. Patrón: `prisma.studySession.aggregate({ _sum: { studyMinutes: true } })` filtrando por `startedAt >= startOfDay` y `status != ACTIVE`
+6. **Streak=0** — decidir UX (ocultar pill vs copy motivadora "Empieza tu racha hoy")
+7. **Refactor folder/note repo cross-feature** (deuda técnica acumulada):
+   - `solarium.service.createSession` toca `prisma.folder.count` y `prisma.note.count` directo (TODO marcado en código). Cuando existan `server/folders/folder.repository.ts` y `server/notes/note.repository.ts`, mover a `folderRepository.countOwnedByUser(ids, userId)`.
+   - `solarium.actions.createNoteInActiveSessionAction` rompe la regla "actions no tocan Prisma" porque hace `prisma.note.create` inline. Refactor: mover lógica a `solariumService.createNoteInActiveSession(userId)` que llama a `noteRepository.createForSession({ userId, sessionId })`. Ticket independiente — documentado 2026-05-14.
+8. **Spike IA flashcards** (paralelo, no bloquea Solarium) — `/lab/flashcards` con Gemini Flash
+9. **Verificar drift Neon** (sección "drift de schema en Neon")
+10. **Ticket: Rebranding pass post-Solarium MVP** — coherencia visual cross-feature (tipografía, spacing, radios, idioma UI, paleta cross-feature). Es refactor grande.
+11. **Ticket: ficha técnica de sesión** — `/solarium/sessions/[id]` con detalle de sesión. RecentSessionCard ya está preparada con `cursor-pointer`
+12. **Email reset de contraseña** — pendiente de tener dominio propio + Resend setup (free tier 3.000/mes)
+13. **Logo profesional** — placeholder actual: pill amarilla con Sparkles
+14. **Active route highlighting** en sidebar (requiere `usePathname()` en Client Component)
+15. **Rate limiting** en server actions (CRÍTICO antes de abrir a usuarios reales)
+16. **Modales confirmación AlertDialog** — reemplazar `window.confirm()` en `note-actions-menu.tsx`, folder delete, feedback delete
+17. **Decisión sobre rebrand Lumma vs LumaNote** — sin urgencia, opción A (proyecto aprendizaje) vigente
+18. **Añadir `predev: prisma generate`** al `package.json` de `apps/web` para evitar bugs de cliente stale al cambiar de rama
+19. **Cleanup código**: comprobar y borrar `home-client.tsx` huerfano si sigue ahí
+20. Verificación email con Mailtrap
+21. **Decidir workflow handoff branch-divergence** (postpuesto): opción A (solo actualizar en dev) vs opción B (gitignore). Sigue pendiente.
+
+### Hecho (no repetir)
+
+- ~~Página de perfil~~ — ✅ hecha 2026-05-05
+- ~~Validación con Zod en feedback-actions~~ — manual con `if`, decisión consciente low-risk
+- ~~Bug del sidebar (empty `<li>` tras revalidatePath)~~ — ✅ arreglado 2026-05-06
+- ~~Schema StudySession + migración~~ — ✅ aplicada en local
+- ~~Server actions Solarium~~ — ✅ implementadas 2026-05-08, **refactorizadas a 3 capas 2026-05-12**
+- ~~Sky components extraídos~~ — ✅ con lowDetail prop 2026-05-11
+- ~~Sidebar refactor (header, collapsible, user dropdown)~~ — ✅ 2026-05-11
+- ~~Cleanup schema (isQuickNote, autoDelete)~~ — ✅ ya no están en schema, BD local ya migrada
+- ~~Spellcheck en code blocks~~ — descartado, aceptamos squigglies por bug con ProseMirror
+- ~~Fase 3 Solarium (hub con datos reales)~~ — ✅ enchufado 2026-05-12 (solo TODAY_MINUTES sigue mock)
+- ~~Eliminar cuenta~~ — ✅ implementado 2026-05-12, en PR #1 pendiente merge
+- ~~Documento de arquitectura~~ — ✅ `docs/concepts/arquitectura.md` 2026-05-12
+- ~~Decisiones UX Solarium MVP~~ — ✅ cerradas 2026-05-12 (ver "Reglas UX cerradas")
+- ~~Schema modular M:N~~ — ✅ 2026-05-13. Folder ↔ StudySession y Note ↔ StudySession con tablas join implícitas
+- ~~Fase 4 Solarium (/new con multi-material y modal exclusión)~~ — ✅ 2026-05-13
+- ~~Identidad visual Solarium~~ — ✅ 2026-05-13 (amber-500 acento, sin gradients, sin shadow extra, max-w-5xl consistente)
+- ~~Cleanup Tier 1 UX~~ — ✅ 2026-05-13 (todos los items menos streak=0)
+- ~~Bug fix JWT-DB sync (PR #1)~~ — ✅ commit `f26d229` en feature/LUMMA-02-Change-password
+- ~~Bug fix sidebar Slot+asChild en CollapsibleTrigger~~ — ✅ 2026-05-13. Fix: usar className directo, no asChild para HTML plano
+- ~~Bug fix toggleFeedbackVote (prisma.feedbackPost → feedbackVote)~~ — ✅ 2026-05-13
+- ~~vercel.json ignoreCommand para skip de feature branches~~ — ✅ 2026-05-13 (pendiente commit/push a dev)
+- ~~Botón info en hub Solarium~~ — ✅ 2026-05-13 (mañana) — `solarium-info-button.tsx` con Dialog explicativo
+- ~~Decisión multi-tool para `/active`~~ — ✅ 2026-05-13 (mañana). Tabs Notas/Tareas/Tablero como shell, solo Notas funcional en MVP
+- ~~Maqueta `/mockup` interactiva~~ — ✅ 2026-05-13 (mañana). Hardcoded, full Client Component, referencia visual para portar a `/active`
+- ~~Esqueleto `/active/page.tsx`~~ — ✅ 2026-05-13 (mañana). Auth + getActiveSession + redirects guards. Sin UI todavía.
 
 ---
 
@@ -396,96 +749,185 @@ Esto refuerza la importancia de:
 
 ---
 
-## Sessions (antes Zen Mode) — visión y plan (2026-05-05)
+## Solarium — diseño cerrado (2026-05-06)
 
-### Replanteo del feature diferenciador
+### Identidad y naming
 
-Lo que originalmente era "Zen Mode" (aislarte con tus notas elegidas) ha evolucionado en algo más ambicioso: **Sessions**. Una sesión registrable de estudio que:
+- **Solario / Solarium** = la sección donde se compone la sesión de estudio. Engloba TODAS las herramientas: Pomodoro hoy, flashcards/quiz/resumen IA en el futuro
+- En código/URLs: `solarium` (inglés/latín, consistente con `home`, `inbox`, `folders`)
+- En UI/branding/marketing: **"Solario"** (español)
+- Patrón: code en inglés, labels en español. Igual que `home` → "Inicio"
 
-- Toma carpetas/notas elegidas previamente
-- Corre un Pomodoro configurable (estudio + descansos + rondas)
-- Muestra info en tiempo real (tiempo restante, ronda actual)
-- Integra IA para generar **flashcards o tests** a partir de los apuntes de la sesión
-- Permite configuración rica: "1 test antes, 2 rondas 30/5, 1 ronda flashcards, 30 min estudio final"
-- Soporta **plantillas** (predefinidas o creadas por el usuario)
-- Tiene **calendario** para programar/recordar días de estudio
-- Lleva **estadísticas**: racha de días, tiempo invertido, tests/flashcards respondidos
-- Streak para fomentar el hábito (bonificable con días de gracia tipo Duolingo v2)
+### Decisiones del modelo (todas cerradas)
 
-Es el feature diferenciador de Lumma vs Notion/Apple Notes/Bear. Sin esto, Lumma es una app de notas más.
+| Decisión | Valor |
+|---|---|
+| Definición "completed" | actualDuration >= targetDuration |
+| Pomodoro | Visual solo, 1 sesión = 1 unidad continua |
+| Ventana arrepentimiento | 30s antes de persistir, sin penalty |
+| Política de salida | **Humana**: tab switch SIN penalty, solo cierre real / abandonar penaliza |
+| Detección cierre | beforeunload + sendBeacon + heartbeat 30s + cleanup server side |
+| Multi-dispositivo | Una sesión activa por usuario |
+| Día del streak | Por `startedAt.toLocalDate()` del user (no UTC) |
+| Stats en abandonadas | **Sí**, se guardan study/break minutes incluso en failed (no es total loss) |
+| Sidebar durante sesión | Oculta vía route group `(solariumspace)` |
+| Goal por defecto | 60 min/día |
+| Mínimo registrable | 10 min de estudio real |
+| Cielo en tiempo real durante sesión | NO en MVP, solo timer |
 
-### Por qué se pospuso tanto (contexto)
+### Sistema de marca
 
-Javier no tenía claro la forma. La duda principal era la integración de IA: si encontrar un modelo gratuito viable o si tendría que pagar. Esa indecisión bloqueó el avance.
+- **Lumma** = luz (app)
+- **Luminita** = pequeño sol personificado, voz de la IA (resumen, flashcards, quiz). Survives rebranding del nombre principal porque no depende de "Lumma"
+- **Clima en calendario** según actividad: ☀️ sol pleno (90+min), 🌤️ sol entre nubes (50+), ⛅ sol tímido (1+), vacío (0)
+- **Failed sessions NO aparecen como lluvia** — sin metáfora punitiva. El clima refleja lo que hiciste, no lo que abandonaste
+- **Lenguaje del producto**: "tu cielo está despejado", "amanece", "sol pleno"
 
-### Reality check de la IA (resuelto)
+### Routing decidido
 
-- **gpt-4o-mini**: ~$0.001 por sesión generando 10 flashcards de 5000 tokens
-- **Gemini 2.0 Flash**: gratis con rate limits razonables
-- **Groq + Llama**: gratis con rate limits
-- **Claude Haiku**: barato y bueno para esto
-- Para un proyecto personal con decenas de usuarios → **céntimos al mes**
+```
+app/
+├── (workspace)/
+│   └── solarium/page.tsx       ← /solarium (hub, con sidebar)
+└── (solariumspace)/
+    ├── layout.tsx               ← sin sidebar (distraction-free)
+    └── active/page.tsx         ← /active (singleton, una activa por user)
+```
 
-El blocker no es el coste, es **prompt engineering, latencia y manejo de errores**. Eso requiere prototipo, no más debate teórico.
+NO hay `/active/[id]` ni `/result/[id]`. Razón: una sesión completada **no es entidad linkeable**, es un evento del pasado que aparece como card en stats del hub. Completion se muestra como **estado interno** de `/active` (celebración + botón volver) antes de redirigir a `/solarium`.
 
-### Pregunta fundacional sin resolver
+Folder vacíos ya creados pero pendientes de rellenar:
+- `apps/web/app/(workspace)/solarium/page.tsx` (vacío)
+- `apps/web/app/(solariumspace)/layout.tsx` (vacío)
+- `apps/web/app/(solariumspace)/active/page.tsx` (renombrar de `solariumActive` a `active`)
 
-**¿Qué es una "sesión completada"?** Esto define streak, stats, calendar, todo. Opciones:
-- ¿Termina las rondas configuradas?
-- ¿Cuenta a medias si abandona?
-- ¿Mínimo de tiempo (15 min) para registrar?
-- ¿1 ronda mínima?
+### Schema final (revisado y aplicado en `schema.prisma`)
 
-Hasta que esto no esté contestado, el feature está mal cimentado.
+```prisma
+enum StudySessionStatus {
+  ACTIVE
+  COMPLETED
+  ABANDONED
+}
 
-### Roadmap reordenado (propuesta)
+model StudySession {
+  id       String  @id @default(uuid())
+  userId   String
+  user     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  folderId String?
+  folder   Folder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
 
-Javier proponía: DB → server actions → UX → vistas → MVP → IA. Reordenado a:
+  startedAt  DateTime  @default(now())
+  endedAt    DateTime?
+  lastSeenAt DateTime  @default(now())   // heartbeat
 
-| Fase | Qué | Coste estimado |
+  targetMinutes Int
+  studyMinutes  Int @default(0)          // focus real
+  breakMinutes  Int @default(0)          // descanso Pomodoro
+
+  status StudySessionStatus @default(ACTIVE)
+
+  notesTouched String[]                   // notas abiertas durante la sesión
+  notesCreated String[]                   // notas creadas durante la sesión
+
+  @@index([userId, startedAt])
+  @@index([userId, status])               // para "tienes activa?"
+}
+```
+
+Añadir en `User`: `studySessions StudySession[]`. Añadir en `Folder`: `studySessions StudySession[]`.
+
+**Cambios respecto a versión anterior**:
+- Replaced `completed` + `abandoned` booleans (estados inválidos posibles) con enum `StudySessionStatus`
+- Eliminado `createdAt` redundante con `startedAt`
+- Añadido `notesCreated` separado (mockup mostraba "3 revisadas · 1 nueva", son métricas distintas)
+- Segundo índice por `[userId, status]` para query frecuente
+
+### Plan de implementación (7 fases)
+
+| Fase | Qué | Estado |
 |---|---|---|
-| 0 | **Prototipo IA** en `/lab/flashcards` (paralelo, no bloquea) | 30-60 min |
-| 1 | **UX en papel/Figma** del MVP | 1-2 sesiones |
-| 2 | **Schema** (`Session`: userId, startedAt, endedAt, durationMin, completed, noteIds[]) | 1 sesión |
-| 3 | **Server actions**: createSession, completeSession, getSessionsForDate, computeStreak | 1 sesión |
-| 4 | **Vistas**: selector → cronómetro → completion screen | 2 sesiones |
-| 5 | **Streak en home + lista de sesiones recientes** | 1 sesión |
-| 6 | **MVP cerrado, dogfood unas semanas** antes de añadir capas | — |
-| 7+ | Capas: templates → IA flashcards → calendar → stats avanzadas | a ritmo |
+| 0 | Defaults rápidos (decisiones pendientes) | ✅ hecho 2026-05-06 |
+| 1 | Schema StudySession + migración | ✅ inicial 2026-05-06, **rehecho M:N 2026-05-13** (folder Folder[] + notes Note[] con tablas join implícitas) |
+| 2 | Server actions (`createSession`, `heartbeat`, `abandonSession`, `completeSession`, `getActiveSession`, `getRecentSessions`, `getStreak`) | ✅ refactorizadas a 3 capas 2026-05-12 + **actualizadas a shape modular** `{folderIds, noteIds}` 2026-05-13 |
+| 3 | Hub real `/solarium` con datos de DB | ✅ 2026-05-12. Pendiente menor: `getTodayStudyMinutes(userId)` (TODAY_MINUTES sigue mock) |
+| 4 | Crear sesión real `/solarium/new` | ✅ **cerrada 2026-05-13**. Multi-material (carpetas + notas) + modal exclusión + chips duración + identidad visual aplicada |
+| 5 | Sesión activa `/active` con timer, heartbeat, beforeunload, **popup de abandono custom** | ⏳ archivos con stubs. La fase más densa, ~2 sesiones. Patrón timer: "X restantes / X de Y hechos" |
+| 6 | Result interno (estado de /active) con celebración | ⏳ |
+| 7 | Borrar mockup `/sessions-mockup` + revisar sidebar item definitivo | ⏳ |
 
-Razón del reorden: la DB modela lo que la UX exige. Definir schema antes de UX lleva a refactorizar después.
+**Total restante**: ~2-3 sesiones de trabajo. Lo siguiente: Fase 5 (la grande).
 
-### MVP scope cortado agresivamente
+### Sky components extraídos (2026-05-11)
 
-Para tener Sessions v1 funcional pronto, dejar fuera:
-- ❌ Templates (capa posterior)
-- ❌ IA / flashcards (capa posterior)
-- ❌ Calendar (capa posterior)
-- ❌ Configuración rica de sesión
-- ❌ Stats avanzadas
+`components/solarium/sky/` con 4 componentes de estado del cielo + 1 picker + 1 footer compartido:
 
-Mantener solo:
-- ✅ Selección de notas/carpetas para la sesión
-- ✅ Pomodoro fijo (25/5, 4 rondas, sin configuración inicial)
-- ✅ Vista de sesión activa (cronómetro grande, notas accesibles, pause/end)
-- ✅ Registro al completar (timestamp, duración real, notas usadas)
-- ✅ Streak básico (día con ≥1 sesión completada cuenta)
+- **`sky-night.tsx`** — 0 min hoy. Cielo índigo, luna y estrellas. Copy: *"Tu cielo aún no ha amanecido"*
+- **`sky-dawn.tsx`** — 1-30% del target. Cielo coral, sol naranja asomando. Copy: *"Tu sol está amaneciendo"*
+- **`sky-morning.tsx`** — 30-75%. Paleta amber/azul, sol subiendo. Copy: *"Tu sol está al X%"*
+- **`sky-midday.tsx`** — 75%+. Sol pleno, paleta saturada. Copy: *"Sol pleno"*
+- **`sky-footer.tsx`** — footer reusable con `Hoy`, minutos, `streak` pill y children=copy
+- **`sky-today.tsx`** — picker que decide qué fase mostrar según `(todayMinutes, target)`
+
+Cada componente acepta prop `lowDetail`. Activar lowDetail oculta: halos `blur-3xl`, nubes extras, estrellas extras, sombras del sol. **Mantiene siempre**: gradient del cielo, sol/luna principal, 1 nube, footer con stats. Gancho preparado para conectar a `prefers-reduced-motion` o detección de mobile/batería baja en el futuro.
+
+Mockup comparativo en `/sessions-mockup/sky-states` (full vs lowDetail side-by-side).
+
+### Constantes en server actions
+
+En `solarium-actions.ts`:
+- **`STALE_HEARTBEAT_MS = 2 * 60 * 1000`** — si `lastSeenAt` lleva más de 2 min, `getActiveSession` marca ABANDONED y devuelve null. Es el lazy cleanup que sustituye a un cron job.
+
+Decisiones clave:
+- **`createSession` idempotente**: si ya hay ACTIVE, devuelve la existente (no error)
+- **`completeSession` confía en el cliente**: no valida que `studyMinutes >= targetMinutes`. La UI no debería llamarla antes.
+- **`getStreak` gracia de 1 día**: si hoy no completaste pero ayer sí, la racha sigue. Solo se rompe al pasar 2 días sin sesión.
+- **Días en UTC**: trade-off MVP. Para usuarios en zonas horarias muy distintas del server puede haber 1 día de desfase.
+
+### MVP scope (cortado agresivamente)
+
+✅ Mantener:
+- Selección de carpeta + duración (chips 25/50/90)
+- Una sesión continua (Pomodoro = visual)
+- Heartbeat + detección cierre
+- Stats save siempre (completed o abandoned)
+- Streak por día con sesiones completed
+- Sub-sidebar de notas durante sesión activa
+- Crear/editar notas durante sesión
+
+❌ Fuera del MVP:
+- Plantillas funcionales (mockeadas hardcoded)
+- Sistema crear plantilla con builder
+- IA / Luminita / Flashcards
+- Cielo cambia en tiempo real durante sesión
+- Compartir plantillas
+- Sesiones grupales
+
+### Reality check de la IA (siguen vigentes)
+
+- **Gemini 2.0 Flash**: gratis con rate limits razonables
+- **Groq + Llama 3**: gratis con rate limits
+- **Claude Haiku**: barato y bueno
+- Para proyecto personal con decenas de users → **céntimos al mes**
+
+Blocker no es coste, es **prompt engineering, latencia y manejo de errores**. Spike pendiente en `/lab/flashcards` (paralelo, no bloquea Solarium MVP).
 
 ### Notas sobre streaks (cuando se llegue)
 
-Streak es droga de engagement pero también ansiedad. Duolingo perdió usuarios cuando rompían streak de 200 días por un día malo. Considerar:
+Streak es droga de engagement pero también ansiedad. Duolingo perdió usuarios al romper streak de 200 días. Considerar para v2:
 - **Días de gracia** (1-2 al mes automáticos)
 - **Pausa de viaje** (configurable manualmente)
 - **Streak congelado** durante exámenes/vacaciones
 
 Apuntar para v2 del feature, no para MVP.
 
-### Próximos pasos concretos
+### Mockup actual
 
-1. **Javier contesta**: qué es "sesión completada" (un párrafo basta)
-2. **Sesión aparte**: prototipo IA en `/lab/flashcards` para validar calidad/latencia
-3. **Sesión aparte**: dibujar UX del MVP (papel sirve, Figma mejor)
-4. **Después**: schema + server actions con contexto completo
+Vive en `apps/web/app/(workspace)/sessions-mockup/`. Construido con `_components/` para los modales. **Borrar entera tras Fase 7**. Sirve como referencia visual durante implementación. URL: `/sessions-mockup`.
+
+### Idea social diferida (no urgente)
+
+Discutida 2026-05-06: Lumma podría tener visibilidad entre usuarios para "ver amigos estudiando", sesiones grupales, compartir notas read-only. **Decidido NO añadir al schema actual** — YAGNI. Cuando llegue el momento, refactor con modelos `Friendship/Follow` y permission system. Por ahora schema "personal", refactorizar después si la network effect aparece.
 
 ---
 
@@ -587,3 +1029,68 @@ Si dice "no migrations found" o lista solo las anteriores → no se aplicó, tod
 ### Recomendación
 
 Antes de retomar `feature/solarium`, comprobar el estado de Neon (1 minuto). Decidir Caso A o B. Resolver. Continuar.
+
+---
+
+## Inventario de archivos clave (rama `feature/solarium`, estado 2026-05-13)
+
+Para que un agente que entra en frío sepa qué tocar antes de releer todo:
+
+### Solarium (3 capas, schema modular M:N, identidad visual 2026-05-13)
+- `apps/web/prisma/schema.prisma` — `StudySession` con `folder Folder[]` + `notes Note[]` (M:N implícitas), enum `StudySessionStatus`
+- `apps/web/prisma/migrations/` — incluye `20260513064704_modular_session_materials` y `20260513065637_fix_note_many_to_many`
+- **`apps/web/server/solarium/solarium.repository.ts`** — 7 funciones puras de acceso a datos. `findRecentByUser` excluye ACTIVE. `create` recibe `{ folderIds, noteIds }` y usa `connect` M:N
+- **`apps/web/server/solarium/solarium.service.ts`** — lógica de negocio. `createSession` valida que folders+notes pertenezcan al user antes de crear. TODO marcado: refactorizar folder/note checks a sus repos cuando existan
+- **`apps/web/server/solarium/solarium.actions.ts`** — 4 mutaciones finas (`createSessionAction`, `heartbeatAction`, `abandonSessionAction`, `completeSessionAction`). Importa `getAuthedUserId` desde `@/lib/auth-helper`
+- **`apps/web/lib/auth-helper.ts`** — helper `getAuthedUserId` centralizado. Punto único para añadir verificación de rol/2FA/rate limiting en el futuro
+- `apps/web/app/(workspace)/solarium/page.tsx` — hub funcional (header "Solarium", icono Sun ámbar, CTA "Empezar a estudiar"). Recent + streak reales. Helper `formatWhen()` interno. Mock solo en `TODAY_MINUTES = 0`
+- **`apps/web/app/(workspace)/solarium/new/page.tsx`** — Server Component que fetcha folders (con sus notas) + 50 notas recientes en `Promise.all`. Renderiza `<SessionConfig>`
+- **`apps/web/components/solarium/session-config.tsx`** — Client Component con tabs Carpetas/Notas, multi-selección, modal de carpeta, chips duración, botón submit. Estado: `selectedFolders`, `selectedNotes`, `excludedNoteIds`. Resuelve `finalNoteIds` al submit
+- **`apps/web/components/solarium/folder-contents-modal.tsx`** — Dialog que muestra notas de una carpeta con toggle "Quitar/Incluir". Persiste exclusiones en `excludedNoteIds` del padre
+- **`apps/web/components/solarium/solarium-info-button.tsx`** — Dialog explicativo "¿Qué es Solarium?" con 3 pasos. Botón con icono `Info` en header del hub
+- `apps/web/app/(workspace)/sessions-mockup/` — mockup completo, BORRAR en Fase 7
+- `apps/web/app/(solariumspace)/layout.tsx` — layout transparente (`<>{children}</>`) que crea el route group sin sidebar workspace
+- `apps/web/app/(solariumspace)/active/page.tsx` — esqueleto Server Component con auth + getActiveSession + guards de redirect. Falta UI (Fase 5)
+- **`apps/web/app/(solariumspace)/mockup/page.tsx`** — maqueta interactiva de la pantalla `/active`. Full Client Component, hardcoded. Referencia visual para portar a `/active`. BORRAR cuando `/active` esté terminada
+- `apps/web/components/solarium/sky/*.tsx` — 6 componentes Sky + `index.ts` barrel con lowDetail prop. Gradients/blur permitidos aquí por metáfora visual
+- `apps/web/components/solarium/{abandon-button,folder-picker-button,save-as-template-button,templates-section}.tsx` — restos del mockup, BORRAR en Fase 7
+- `apps/web/components/ui/tabs.tsx` — shadcn Tabs (instalado 2026-05-13 para `/new`)
+- `docs/concepts/arquitectura.md` — guía de referencia de las 3 capas
+
+### Vercel + workflow
+- `apps/web/vercel.json` — `ignoreCommand` que skipea builds en feature branches (solo `dev` y `main` construyen)
+
+### Layout y sidebar (refactor 2026-05-11)
+- `apps/web/app/(workspace)/layout.tsx` — sidebar pulido, user dropdown footer
+- `apps/web/components/sidebar-user-menu.tsx` — Client Component del dropdown del usuario
+- `apps/web/components/sidebar-mobile-auto-close.tsx` — cierra drawer en mobile al navegar
+- `apps/web/components/ui/sidebar-variants.ts` — `sidebarMenuButtonVariants` + `sidebarMenuSubButtonVariants` (cva)
+- `apps/web/server/actions/auth-actions.ts` — `signOutAction()` exportada para usar desde Client Components
+
+### Profile y account (rama `feature/LUMMA-02-Change-password`, en PR #1)
+- `apps/web/app/(workspace)/profile/page.tsx` — sección "Zona peligrosa" añadida
+- `apps/web/components/profile/profile-name-form.tsx` — cambio de nombre
+- `apps/web/components/profile/profile-password-form.tsx` — cambio de contraseña (ya estaba en dev)
+- `apps/web/components/profile/profile-delete-form.tsx` — Dialog con confirmación "ELIMINAR"
+- `apps/web/server/actions/user-actions.ts` — `getProfile`, `updateName`, `updatePassword`, `deleteAccount`
+- `apps/web/schemas/user.schema.ts` — `updateNameSchema`, `updatePasswordSchema`, `deleteAccountSchema`
+
+### Editor
+- `apps/web/components/notes/blocknote.tsx` — BlockNote con schema custom + Shiki + 14 lenguajes
+- `apps/web/app/globals.css` — estilos del code block (claros) + selector pill estilizado
+
+### Notas y carpetas
+- `apps/web/components/notes/note-actions-menu.tsx` — kebab dropdown reusable (Mover + Eliminar)
+- `apps/web/components/notes/move-to-folder-dialog.tsx` — selector de carpeta destino con animaciones motion
+- `apps/web/components/notes/notes-search.tsx` — buscador en header con dropdown de resultados
+- `apps/web/server/actions/notes-actions.ts` — incluye `moveNoteToFolder`, `searchNotes`
+
+### Auth y middleware
+- `apps/web/auth.ts` — config NextAuth v5 (Google + Credentials + Prisma adapter + JWT)
+- `apps/web/proxy.ts` — middleware con cookie cleanup para JWTs inválidos
+
+### Estado de las ramas
+- **Rama actual de trabajo**: `feature/solarium`
+- **Rama paralela**: `feature/LUMMA-02-Change-password` → PR #1 pendiente merge a `dev`
+- **Vercel deploya**: rama `dev`
+- **Historia "fea" de feature/solarium**: tras el lío del 2026-05-07, hay `add Solarium → revert → reapply` + commit WIP del refactor de capas. Cuando se mergee a dev, considerar `git merge --squash` para aplanar.

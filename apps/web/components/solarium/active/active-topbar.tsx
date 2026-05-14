@@ -1,0 +1,159 @@
+"use client";
+
+import { useState } from "react";
+import {
+	Check,
+	LayoutGrid,
+	ListTodo,
+	NotebookPen,
+	Sun,
+	X,
+	type LucideIcon,
+} from "lucide-react";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { cn } from "@/lib/utils";
+
+type Tab = "notas" | "tareas" | "tablero";
+
+export function ActiveTopbar({
+	title,
+	activeTab,
+	onTabChange,
+	onAbandon,
+	abandonPending,
+	elapsedMinutes,
+	isCompleted,
+	onExit,
+}: {
+	title: string;
+	activeTab: Tab;
+	onTabChange: (tab: Tab) => void;
+	onAbandon: () => void;
+	abandonPending: boolean;
+	elapsedMinutes: number;
+	isCompleted: boolean;
+	onExit: () => void;
+}) {
+	const [confirmOpen, setConfirmOpen] = useState(false);
+
+	return (
+		<header className="flex h-14 shrink-0 items-center gap-4 border-b px-4">
+			<div className="flex items-center gap-2">
+				<Sun className="size-5 text-amber-500" />
+				<span className="text-sm font-semibold">{title}</span>
+				{isCompleted && (
+					<span className="ml-1 inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-700">
+						<Check className="size-3" />
+						Completada
+					</span>
+				)}
+			</div>
+
+			<div className="flex flex-1 justify-center">
+				<div className="flex items-center gap-1 rounded-lg border bg-muted/30 p-1">
+					<TabButton
+						icon={NotebookPen}
+						label="Notas"
+						active={activeTab === "notas"}
+						onClick={() => onTabChange("notas")}
+					/>
+					<TabButton
+						icon={ListTodo}
+						label="Tareas"
+						active={activeTab === "tareas"}
+						onClick={() => onTabChange("tareas")}
+					/>
+					<TabButton
+						icon={LayoutGrid}
+						label="Tablero"
+						active={activeTab === "tablero"}
+						onClick={() => onTabChange("tablero")}
+					/>
+				</div>
+			</div>
+
+			{isCompleted ? (
+				<button
+					type="button"
+					onClick={onExit}
+					className="flex items-center gap-1.5 rounded-md bg-amber-500 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-amber-600"
+				>
+					<Check className="size-4" />
+					Salir
+				</button>
+			) : (
+				<button
+					type="button"
+					onClick={() => setConfirmOpen(true)}
+					className="flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:border-red-400/60 hover:text-foreground"
+				>
+					<X className="size-4" />
+					Abandonar
+				</button>
+			)}
+
+			<AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>¿Abandonar la sesión?</AlertDialogTitle>
+						<AlertDialogDescription>
+							Esta sesión se marcará como abandonada y{" "}
+							<strong>no contará para tu racha</strong>. Llevas{" "}
+							{elapsedMinutes}{" "}
+							{elapsedMinutes === 1 ? "minuto" : "minutos"} de estudio.
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel disabled={abandonPending}>
+							Quedarme
+						</AlertDialogCancel>
+						<AlertDialogAction
+							onClick={onAbandon}
+							disabled={abandonPending}
+							className="bg-red-500 hover:bg-red-600 text-white"
+						>
+							{abandonPending ? "Saliendo..." : "Sí, abandonar"}
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
+		</header>
+	);
+}
+
+function TabButton({
+	icon: Icon,
+	label,
+	active,
+	onClick,
+}: {
+	icon: LucideIcon;
+	label: string;
+	active: boolean;
+	onClick: () => void;
+}) {
+	return (
+		<button
+			type="button"
+			onClick={onClick}
+			className={cn(
+				"flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm transition-colors",
+				active
+					? "bg-background text-foreground shadow-sm"
+					: "text-muted-foreground hover:text-foreground",
+			)}
+		>
+			<Icon className="size-4" />
+			{label}
+		</button>
+	);
+}

@@ -22,9 +22,6 @@ model User {
   accounts      Account[]
   sessions      Session[]
 
-  // Future feat: For add Face ID auth and other biometrics authenticators
-  //  Authenticator Authenticator[]
-
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   folders   Folder[]
@@ -33,22 +30,25 @@ model User {
   feedbackVotes FeedbackVote[]
 
   feedbackPosts FeedbackPost[]
+  studySessions StudySession[]
 }
 
 model Account {
-  id                String  @id @default(uuid())
-  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                String @id @default(uuid())
+  user              User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId            String
   type              String
   provider          String
   providerAccountId String
-  access_token      String? @db.Text
-  refresh_token     String? @db.Text
-  expires_at        Int?
-  token_type        String?
-  scope             String?
-  id_token          String? @db.Text
-  session_state     String?
+
+  access_token  String? @db.Text
+  refresh_token String? @db.Text
+
+  expires_at    Int?
+  token_type    String?
+  scope         String?
+  id_token      String? @db.Text
+  session_state String?
 
   @@unique([provider, providerAccountId])
 }
@@ -70,58 +70,86 @@ model VerificationToken {
 }
 
 model Folder {
-  id        String   @id @default(uuid())
-  name      String   @default("Carpeta sin título")
+  id   String @id @default(uuid())
+  name String @default("Carpeta sin título")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  user      User     @relation(fields: [userId], references: [id])
-  userId    String
-  notes     Note[]
+
+  user          User           @relation(fields: [userId], references: [id])
+  userId        String
+  notes         Note[]
+  studySessions StudySession[]
 }
 
 model Note {
-  id                  String   @id @default(uuid())
-  title               String
-  content             Json     @default("{}")
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
-  folder              Folder?  @relation(fields: [folderId], references: [id], onDelete: SetNull)
-  folderId            String?
-  user                User     @relation(fields: [userId], references: [id])
-  userId              String
+  id      String @id @default(uuid())
+  title   String
+  content Json   @default("{}")
+
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+ 
+  studySessions StudySession[]
+
+  folder   Folder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  folderId String?
+
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
 }
 
 model FeedbackPost {
   id        String         @id @default(uuid())
+ 
   content   String
   rating    Int
+  votes     FeedbackVote[]
+ 
   createdAt DateTime       @default(now())
+ 
   author    User           @relation(fields: [authorId], references: [id])
   authorId  String
-  votes     FeedbackVote[]
 }
 
 model FeedbackVote {
   user   User         @relation(fields: [userId], references: [id])
   userId String
+ 
   post   FeedbackPost @relation(fields: [postId], references: [id], onDelete: Cascade)
   postId String
 
   @@id([userId, postId])
 }
 
-/**
- * //Future feat: For add Face ID auth and other biometrics authenticators
- * model Authenticator {
- * credentialID         String  @unique
- * userId               String
- * providerAccountId    String
- * credentialPublicKey  String
- * counter              Int
- * credentialDeviceType String
- * credentialBackedUp   Boolean
- * transports           String?
- * user User @relation(fields: [userId], references: [id], onDelete: Cascade)
- * @@id([userId, credentialID])
- * }
- */
+enum StudySessionStatus {
+  ACTIVE
+  COMPLETED
+  ABANDONED
+}
+
+model StudySession {
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  folder Folder[]
+  notes  Note[]
+
+  startedAt  DateTime  @default(now())
+  endedAt    DateTime?
+  lastSeenAt DateTime  @default(now())
+
+  title         String
+  targetMinutes Int
+  studyMinutes  Int    @default(0)
+  breakMinutes  Int    @default(0)
+
+  status StudySessionStatus @default(ACTIVE)
+
+  notesTouched String[]
+  notesCreated String[]
+
+  @@index([userId, startedAt])
+  @@index([userId, status])
+}

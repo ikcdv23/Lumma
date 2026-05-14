@@ -4,7 +4,11 @@ import { prisma } from "@/lib/prisma"
 import { registerSchema } from "@/schemas/auth.schema"
 import bcrypt from "bcrypt"
 import { redirect } from "next/navigation"
-import { signIn } from "@/auth";
+import { signIn, signOut } from "@/auth";
+
+export async function signOutAction() {
+    await signOut({ redirectTo: "/login" });
+}
 
 export async function manualSignin(prevState: unknown, formData: FormData) {
     const rawInput = {
@@ -16,8 +20,6 @@ export async function manualSignin(prevState: unknown, formData: FormData) {
 
     const result = registerSchema.safeParse(rawInput);
     if (!result.success) {
-        // result.error.issues es un array con todos los errores
-        // Devuelve el primero por simplicidad
         return { error: result.error.issues[0]?.message ?? "Datos invalidos" };
     }
 

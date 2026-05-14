@@ -1,24 +1,44 @@
 import "@blocknote/mantine/style.css";
-import { auth, signOut } from "@/auth";
-import { Folder, Home, Inbox, LogOut, MessageSquare, User } from "lucide-react";
+import { auth } from "@/auth";
+import {
+	ChevronDown,
+	Folder,
+	Home,
+	Inbox,
+	MessageSquare,
+	Sparkles,
+	Sun,
+} from "lucide-react";
 import Link from "next/link";
 import { cookies } from "next/headers";
-import { NotesSearch } from "@/components/notes/notes-search"
+import { NotesSearch } from "@/components/notes/notes-search";
 import { SidebarMobileAutoClose } from "@/components/sidebar-mobile-auto-close";
+import { SidebarUserMenu } from "@/components/sidebar-user-menu";
 import { prisma } from "@/lib/prisma";
 import {
 	Sidebar,
 	SidebarContent,
 	SidebarFooter,
+	SidebarGroup,
+	SidebarGroupLabel,
 	SidebarHeader,
 	SidebarInset,
 	SidebarMenu,
-	SidebarMenuButton,
 	SidebarMenuItem,
+	SidebarMenuSub,
+	SidebarMenuSubItem,
 	SidebarProvider,
 	SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { sidebarMenuButtonVariants } from "@/components/ui/sidebar-variants";
+import {
+	Collapsible,
+	CollapsibleContent,
+	CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import {
+	sidebarMenuButtonVariants,
+	sidebarMenuSubButtonVariants,
+} from "@/components/ui/sidebar-variants";
 
 export default async function WorkspaceLayout({
 	children,
@@ -29,89 +49,134 @@ export default async function WorkspaceLayout({
 	const cookieStore = await cookies();
 	const sidebarOpen = cookieStore.get("sidebar_state")?.value !== "false";
 
-	// Leer nombre fresco de la BD (el JWT no se actualiza al cambiar el perfil)
+	// Leer datos frescos de la BD (el JWT no se actualiza al cambiar perfil)
 	const dbUser = session?.user?.id
 		? await prisma.user.findUnique({
 			where: { id: session.user.id },
-			select: { name: true },
+			select: { name: true, image: true, email: true },
 		})
 		: null;
 	const displayName = dbUser?.name ?? session?.user?.name ?? "Usuario";
+	const email = dbUser?.email ?? session?.user?.email ?? "";
+	const avatarUrl = dbUser?.image ?? session?.user?.image ?? null;
+
 	return (
 		<SidebarProvider defaultOpen={sidebarOpen}>
 			<SidebarMobileAutoClose />
 			<Sidebar variant="inset" suppressHydrationWarning>
+				{/* HEADER — Brand */}
 				<SidebarHeader>
 					<SidebarMenu>
 						<SidebarMenuItem>
-							<SidebarMenuButton size="lg">
-								<span className="text-lg font-bold">Lumma</span>
-							</SidebarMenuButton>
+							<div className="flex items-center gap-2.5 px-2 py-3">
+								<div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-linear-to-br from-amber-300 to-amber-500 shadow-sm">
+									<Sparkles
+										className="size-4 text-amber-50"
+										fill="currentColor"
+										strokeWidth={2}
+									/>
+								</div>
+								<div className="flex flex-col min-w-0">
+									<span className="text-base font-bold leading-tight tracking-tight">
+										Lumma
+									</span>
+									<span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+										Notas y estudio
+									</span>
+								</div>
+							</div>
 						</SidebarMenuItem>
 					</SidebarMenu>
 				</SidebarHeader>
 
+				{/* CONTENT — navegación */}
 				<SidebarContent>
-					<SidebarMenu>
+					{/* Grupo principal */}
+					<SidebarGroup>
+						<SidebarMenu>
+							<SidebarMenuItem>
+								<Link
+									href="/home"
+									className={sidebarMenuButtonVariants()}
+								>
+									<Home className="size-4" />
+									Inicio
+								</Link>
+							</SidebarMenuItem>
 
-						<SidebarMenuItem>
-							<Link href="/home" className={sidebarMenuButtonVariants()}>
-								<Home />
-								Inicio
-							</Link>
-						</SidebarMenuItem>
+							<SidebarMenuItem>
+								<Link
+									href="/inbox"
+									className={sidebarMenuButtonVariants()}
+								>
+									<Inbox className="size-4" />
+									Inbox
+								</Link>
+							</SidebarMenuItem>
 
-						<SidebarMenuItem>
-							<Link href="/inbox" className={sidebarMenuButtonVariants()}>
-								<Inbox className="size-5" />
-								Inbox
-							</Link>
-						</SidebarMenuItem>
+							<SidebarMenuItem>
+								<Link
+									href="/folders"
+									className={sidebarMenuButtonVariants()}
+								>
+									<Folder className="size-4" />
+									Carpetas
+								</Link>
+							</SidebarMenuItem>
+						</SidebarMenu>
+					</SidebarGroup>
 
-						<SidebarMenuItem>
-							<Link href="/folders" className={sidebarMenuButtonVariants()}>
-								<Folder className="size-5" />
-								Carpetas
-							</Link>
-						</SidebarMenuItem>
+					{/* Grupo herramientas (colapsable) */}
+					<SidebarGroup>
+						<SidebarGroupLabel>Herramientas</SidebarGroupLabel>
+						<SidebarMenu>
+							<Collapsible className="group/study">
+								<SidebarMenuItem>
+									<CollapsibleTrigger
+										className={sidebarMenuButtonVariants()}
+									>
+										Área de estudio
+										<ChevronDown className="ml-auto size-4 transition-transform group-data-[state=open]/study:rotate-180" />
+									</CollapsibleTrigger>
+									<CollapsibleContent>
+										<SidebarMenuSub>
+											<SidebarMenuSubItem>
 
-					</SidebarMenu>
+												<Link
+													href="/solarium"
+													className={sidebarMenuSubButtonVariants()}
+												><Sun className="size-4" />
+													Solario
+												</Link>
+											</SidebarMenuSubItem>
+										</SidebarMenuSub>
+									</CollapsibleContent>
+								</SidebarMenuItem>
+							</Collapsible>
+						</SidebarMenu>
+					</SidebarGroup>
+
 				</SidebarContent>
 
+				{/* FOOTER — feedback + user dropdown */}
 				<SidebarFooter>
 					<SidebarMenu>
 						<SidebarMenuItem>
-							<Link href="/feedback" className={sidebarMenuButtonVariants()}>
-								<MessageSquare className="size-5" />
+							<Link
+								href="/feedback"
+								className={sidebarMenuButtonVariants()}
+							>
+								<MessageSquare className="size-4" />
 								<span className="text-muted-foreground">Feedback</span>
 							</Link>
 						</SidebarMenuItem>
 
 						<SidebarMenuItem>
-							<Link
-								href="/profile"
-								className={sidebarMenuButtonVariants({ size: "lg" })}
-							>
-								<User />
-								<div className="flex flex-col">
-									<span className="text-sm font-medium">
-										{displayName}
-									</span>
-								</div>
-							</Link>
-						</SidebarMenuItem>
-						<SidebarMenuItem>
-							<form
-								action={async () => {
-									"use server";
-									await signOut({ redirectTo: "/login" });
-								}}
-							>
-								<button type="submit" className={sidebarMenuButtonVariants()}>
-									<LogOut />
-									<span>Cerrar sesion</span>
-								</button>
-							</form>
+							<SidebarUserMenu
+								displayName={displayName}
+								email={email}
+								avatarUrl={avatarUrl}
+							/>
 						</SidebarMenuItem>
 					</SidebarMenu>
 				</SidebarFooter>
@@ -125,7 +190,6 @@ export default async function WorkspaceLayout({
 					</div>
 				</header>
 				<main className="flex flex-1 items-center justify-center">
-
 					{children}
 				</main>
 			</SidebarInset>
