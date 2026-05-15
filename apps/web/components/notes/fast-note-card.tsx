@@ -5,7 +5,8 @@ import { motion, AnimatePresence } from "motion/react";
 import { Inbox, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SaveIndicator } from "@/components/ui/save-indicator";
-import { createNote, updateNote } from "@/server/actions/notes-actions";
+import { createNoteAction, updateNoteAction } from "@/server/note/note.actions";
+import { EditableNote } from "./editable-note";
 
 type FastNotesProps = {
 	userName: string;
@@ -22,7 +23,7 @@ export default function FastNotes({ note, userName }: FastNotesProps) {
 	const [noteId, setNoteId] = useState<string | null>(null);
 	const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">(
 		"idle",
-	);
+	); 
 	const titleRef = useRef<HTMLInputElement>(null);
 	useEffect(() => {
 		// Guard: si no hay nada escrito, no haces nada
@@ -32,10 +33,10 @@ export default function FastNotes({ note, userName }: FastNotesProps) {
 
 		const timer = setTimeout(async () => {
 			if (noteId === null) {
-				const note = await createNote(null, title, noteText);
+				const note = await createNoteAction(null, title, noteText);
 				if (note) setNoteId(note.id);
 			} else {
-				await updateNote(noteId, { title, content: noteText });
+				await updateNoteAction(noteId, { title, content: noteText });
 			}
 			setSaveStatus("saved");
 		}, 600);
@@ -161,22 +162,13 @@ export default function FastNotes({ note, userName }: FastNotesProps) {
 
 							{/* Editor */}
 							<div className="flex-1 overflow-auto p-8 md:p-12">
-								<input
-									id="title"
-									ref={titleRef}
-									value={title}
-									onChange={(e) => setTitle(e.target.value)}
-									type="text"
-									placeholder="Titulo de la nota"
-									className="w-full bg-transparent text-2xl md:text-3xl font-bold tracking-tight outline-none placeholder:text-muted-foreground/50"
-								/>
-								<textarea
-									value={noteText}
-									onChange={(e) => setNoteText(e.target.value)}
-									placeholder="Escribe lo que tengas en mente..."
-									rows={20}
-									className="w-full mt-4 bg-transparent text-base leading-relaxed outline-none placeholder:text-muted-foreground/50 resize-none"
-								/>
+
+
+								<EditableNote note={{
+									id: "",
+									title: "",
+									content: undefined
+								}}/>
 							</div>
 						</motion.div>
 					</>

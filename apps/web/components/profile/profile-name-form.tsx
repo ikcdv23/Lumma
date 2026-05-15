@@ -6,12 +6,12 @@ import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { updateName } from "@/server/actions/user-actions";
+import { updateNameAction } from "@/server/user/user.actions";
 
 type State = { error?: string; success?: boolean } | null;
 
 async function action(_prev: State, formData: FormData): Promise<State> {
-	return await updateName(formData);
+	return await updateNameAction(formData);
 }
 
 function SaveButton({ disabled }: { disabled: boolean }) {

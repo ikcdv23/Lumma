@@ -16,12 +16,12 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { deleteAccount } from "@/server/actions/user-actions";
+import { deleteAccountAction } from "@/server/user/user.actions";
 
 type State = { error?: string } | null;
 
 async function action(_prev: State, formData: FormData): Promise<State> {
-	const result = await deleteAccount(formData);
+	const result = await deleteAccountAction(formData);
 	return result ?? null;
 }
 

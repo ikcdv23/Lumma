@@ -3,9 +3,9 @@ import { StarRating } from "./star-rating";
 import { VoteButton } from "./vote-button";
 import { formatRelative } from "@/lib/format-date";
 import {
-	deleteFeedbackPost,
-	toggleFeedbackVote,
-} from "@/server/actions/feedback-actions";
+	deleteFeedbackPostAction,
+	toggleFeedbackVoteAction,
+} from "@/server/feedback/feedback.actions";
 
 type FeedbackPostCardProps = {
 	post: {
@@ -46,7 +46,7 @@ export function FeedbackPostCard({ post, isAuthor }: FeedbackPostCardProps) {
 				<form
 					action={async () => {
 						"use server";
-						await toggleFeedbackVote(post.id);
+						await toggleFeedbackVoteAction(post.id);
 					}}
 				>
 					<VoteButton count={post._count.votes} voted={voted} />
@@ -56,7 +56,7 @@ export function FeedbackPostCard({ post, isAuthor }: FeedbackPostCardProps) {
 					<form
 						action={async () => {
 							"use server";
-							await deleteFeedbackPost(post.id);
+							await deleteFeedbackPostAction(post.id);
 						}}
 					>
 						<button

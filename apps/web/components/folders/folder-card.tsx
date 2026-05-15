@@ -8,7 +8,7 @@ import {
 	ContextMenuItem,
 	ContextMenuTrigger,
 } from "@/components/ui/context-menu";
-import { deleteFolder } from "@/server/actions/folder-actions";
+import { deleteFolderAction } from "@/server/folder/folder.actions";
 
 type FolderCardProps = {
 	idFolder: string;
@@ -49,7 +49,7 @@ export function FolderCard({
 				<ContextMenuItem
 					className="text-destructive"
 					onClick={async () => {
-						await deleteFolder(idFolder);
+						await deleteFolderAction(idFolder);
 					}}
 				>
 					Eliminar

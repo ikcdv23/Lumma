@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { AlertTriangle, FileText, Folder, Mail, User, KeyRound, Calendar } from "lucide-react";
-import { getProfile } from "@/server/actions/user-actions";
+import { requireAuthedUserId } from "@/lib/auth-helper";
+import * as userService from "@/server/user/user.service";
 import { ProfileNameForm } from "@/components/profile/profile-name-form";
 import { ProfilePasswordForm } from "@/components/profile/profile-password-form";
 import { ProfileDeleteForm } from "@/components/profile/profile-delete-form";
@@ -27,7 +28,8 @@ function formatJoined(date: Date) {
 }
 
 export default async function ProfilePage() {
-	const profile = await getProfile();
+	const userId = await requireAuthedUserId();
+	const profile = await userService.getProfile(userId);
 	if (!profile) redirect("/login");
 
 	return (
@@ -48,12 +50,12 @@ export default async function ProfilePage() {
 					// eslint-disable-next-line @next/next/no-img-element
 					<img
 						src={profile.image}
-						alt={profile.name ?? profile.email}
+						alt={profile.name ?? profile.email ?? "Usuario"}
 						className="size-18 rounded-full object-cover"
 					/>
 				) : (
 					<div className="flex size-18 items-center justify-center rounded-full bg-primary/10 text-2xl font-semibold text-primary">
-						{getInitials(profile.name, profile.email)}
+						{getInitials(profile.name, profile.email ?? "")}
 					</div>
 				)}
 

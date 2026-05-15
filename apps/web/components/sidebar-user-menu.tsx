@@ -10,7 +10,7 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { signOutAction } from "@/server/actions/auth-actions";
+import { signOutAction } from "@/server/auth/auth.actions";
 
 type Props = {
 	displayName: string;
