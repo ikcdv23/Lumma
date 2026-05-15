@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { createSessionAction } from "@/server/solarium/solarium.actions";
+import { Spinner } from "@/components/loaders";
 import { FolderContentsModal } from "./folder-contents-modal";
 
 type FolderItem = {
@@ -315,8 +316,17 @@ export function SessionConfig({
 				size="lg"
 				className="bg-amber-500 hover:bg-amber-600 text-white"
 			>
-				<Zap className="size-5" strokeWidth={2} />
-				{isPending ? "Iniciando..." : "Empezar a estudiar"}
+				{isPending ? (
+					<>
+						<Spinner size="sm" className="border-white border-t-transparent" />
+						Iniciando
+					</>
+				) : (
+					<>
+						<Zap className="size-5" strokeWidth={2} />
+						Empezar a estudiar
+					</>
+				)}
 			</Button>
 
 			{/* Modal de contenido de carpeta */}
