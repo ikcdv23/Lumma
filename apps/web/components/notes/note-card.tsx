@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/context-menu";
 import { formatRelative } from "@/lib/format-date";
 import { extractPreview } from "@/lib/note-content";
-import { deleteNote } from "@/server/actions/notes-actions";
+import { deleteNoteAction } from "@/server/note/note.actions";
 
 type NoteCardProps = {
 	idNote: string;
@@ -82,7 +82,7 @@ export function NoteCard({
 				<ContextMenuItem
 					className="text-destructive"
 					onClick={async () => {
-						await deleteNote(idNote)
+						await deleteNoteAction(idNote)
 					}}
 				>
 					Eliminar

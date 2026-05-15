@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useActionState } from "react";
-import { manualSignin } from "@/server/actions/auth-actions";
+import { registerAction } from "@/server/user/user.actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,7 +11,7 @@ export function RegisterForm() {
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const [confirmPassword, setConfirmPassword] = useState("");
-	const [state, formAction] = useActionState(manualSignin, null);
+	const [state, formAction] = useActionState(registerAction, null);
 
 	const allFilled =
 		name.trim() !== "" &&

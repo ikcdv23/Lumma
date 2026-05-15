@@ -10,8 +10,8 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import { indexFolders } from "@/server/actions/folder-actions";
-import { moveNoteToFolder } from "@/server/actions/notes-actions";
+import { listFoldersAction } from "@/server/folder/folder.actions";
+import { moveNoteToFolderAction } from "@/server/note/note.actions";
 
 type Folder = { id: string; name: string };
 
@@ -38,7 +38,7 @@ export function MoveToFolderDialog({
 	useEffect(() => {
 		if (!open) return;
 		setFolders(null);
-		indexFolders().then((data) => {
+		listFoldersAction().then((data) => {
 			setFolders(data ?? []);
 		});
 	}, [open]);
@@ -46,7 +46,7 @@ export function MoveToFolderDialog({
 	function handlePick(targetFolderId: string | null) {
 		setPendingId(targetFolderId ?? "__inbox__");
 		startTransition(async () => {
-			await moveNoteToFolder(noteId, targetFolderId);
+			await moveNoteToFolderAction(noteId, targetFolderId);
 			onMoved?.(targetFolderId);
 			setPendingId(null);
 			onOpenChange(false);

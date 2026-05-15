@@ -11,7 +11,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
-import { createFolder, updateFolder } from "@/server/actions/folder-actions";
+import {
+	createFolderAction,
+	updateFolderAction,
+} from "@/server/folder/folder.actions";
 import { SaveFolderButton } from "./save-folder-button";
 
 type FolderModalProps = {
@@ -34,9 +37,9 @@ export function FolderModal({ folder, open, onOpenChange }: FolderModalProps) {
 
 	async function handleSubmit() {
 		if (isEditing) {
-			await updateFolder(folder.id, name);
+			await updateFolderAction(folder.id, name);
 		} else {
-			await createFolder(name);
+			await createFolderAction(name);
 		}
 		setName("");
 		onOpenChange(false);

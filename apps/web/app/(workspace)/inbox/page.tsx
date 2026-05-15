@@ -1,5 +1,6 @@
 import { Inbox } from "lucide-react";
-import { getInboxNotes } from "@/server/actions/notes-actions";
+import { requireAuthedUserId } from "@/lib/auth-helper";
+import * as noteService from "@/server/note/note.service";
 import { NoteListItem } from "@/components/notes/note-list-item";
 
 export const metadata = {
@@ -7,7 +8,8 @@ export const metadata = {
 };
 
 export default async function InboxPage() {
-	const recentNotes = await getInboxNotes();
+	const userId = await requireAuthedUserId();
+	const recentNotes = await noteService.getInboxNotes(userId);
 	const isEmpty = recentNotes.length === 0;
 
 	return (

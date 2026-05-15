@@ -1,5 +1,6 @@
-import { prisma } from "@/lib/prisma";
 import * as solariumRepository from "./solarium.repository";
+import * as folderRepository from "@/server/folder/folder.repository";
+import * as noteRepository from "@/server/note/note.repository";
 
 const STALE_HEARTBEAT_MS = 2 * 60 * 1000;
 
@@ -69,18 +70,22 @@ export async function createSession(
 	const existing = await solariumRepository.findActiveByUser(userId);
 	if (existing) return existing;
 
-	// TODO: mover a folderRepository/noteRepository cuando existan las capas
+	// Validar ownership cross-feature: el service de solarium puede leer de
+	// repos de otros features (regla de arquitectura). Lo que NO puede es
+	// llamar a services de otros features.
 	if (input.folderIds.length > 0) {
-		const ownedFolders = await prisma.folder.count({
-			where: { id: { in: input.folderIds }, userId },
-		});
+		const ownedFolders = await folderRepository.countOwnedByUser(
+			input.folderIds,
+			userId,
+		);
 		if (ownedFolders !== input.folderIds.length) return null;
 	}
 
 	if (input.noteIds.length > 0) {
-		const ownedNotes = await prisma.note.count({
-			where: { id: { in: input.noteIds }, userId },
-		});
+		const ownedNotes = await noteRepository.countOwnedByUser(
+			input.noteIds,
+			userId,
+		);
 		if (ownedNotes !== input.noteIds.length) return null;
 	}
 

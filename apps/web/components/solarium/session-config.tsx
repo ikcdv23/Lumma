@@ -25,7 +25,6 @@ type FolderItem = {
 type NoteItem = {
 	id: string;
 	title: string;
-	folder: { name: string } | null;
 };
 
 const DURATIONS = [25, 50, 90] as const;
@@ -266,11 +265,6 @@ export function SessionConfig({
 												>
 													{n.title || "Sin título"}
 												</span>
-												{n.folder && (
-													<span className="text-xs text-muted-foreground truncate">
-														{n.folder.name}
-													</span>
-												)}
 											</div>
 										</button>
 									);

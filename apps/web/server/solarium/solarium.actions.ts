@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { getAuthedUserId } from "@/lib/auth-helper";
 import * as solariumService from "./solarium.service";
-import { prisma } from "@/lib/prisma";
+import * as noteService from "@/server/note/note.service";
 
 export async function createSessionAction(input: {
 	title: string | null;
@@ -64,22 +64,14 @@ export async function completeSessionAction(
 }
 
 export async function createNoteInActiveSessionAction() {
-  const userId = await getAuthedUserId();
-  if (!userId) return null;
+	const userId = await getAuthedUserId();
+	if (!userId) return null;
 
-  const active = await solariumService.getActiveSession(userId);
-  if (!active) return null;  // o redirect a /solarium
+	const active = await solariumService.getActiveSession(userId);
+	if (!active) return null;
 
-  const newNote = await prisma.note.create({
-    data: {
-      title: "",
-      content: {},
-      userId,
-      studySessions: { connect: { id: active.id } },
-    },
-    select: { id: true },
-  });
+	const newNote = await noteService.createNoteInSession(userId, active.id);
 
-  revalidatePath("/active");
-  return newNote;
+	revalidatePath("/active");
+	return newNote;
 }

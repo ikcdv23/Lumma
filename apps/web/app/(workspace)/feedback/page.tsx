@@ -1,6 +1,6 @@
 import { MessageSquare } from "lucide-react";
-import { auth } from "@/auth";
-import { getFeedbackPosts } from "@/server/actions/feedback-actions";
+import { requireAuthedUserId } from "@/lib/auth-helper";
+import * as feedbackService from "@/server/feedback/feedback.service";
 import { FeedbackForm } from "@/components/feedback/feedback-form";
 import { FeedbackPostCard } from "@/components/feedback/feedback-post-card";
 
@@ -9,9 +9,8 @@ export const metadata = {
 };
 
 export default async function FeedbackPage() {
-	const session = await auth();
-	const userId = session?.user?.id ?? "";
-	const posts = await getFeedbackPosts();
+	const userId = await requireAuthedUserId();
+	const posts = await feedbackService.listPosts(userId);
 	const isEmpty = posts.length === 0;
 
 	return (

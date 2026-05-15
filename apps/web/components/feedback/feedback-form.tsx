@@ -5,7 +5,7 @@ import { useFormStatus } from "react-dom";
 import { Loader2, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StarRating } from "./star-rating";
-import { createFeedbackPost } from "@/server/actions/feedback-actions";
+import { createFeedbackPostAction } from "@/server/feedback/feedback.actions";
 
 function SubmitButton({ disabled }: { disabled: boolean }) {
 	const { pending } = useFormStatus();
@@ -27,7 +27,7 @@ export function FeedbackForm() {
 
 	async function handleSubmit() {
 		if (!content.trim() || rating === 0) return;
-		await createFeedbackPost(content.trim(), rating);
+		await createFeedbackPostAction(content.trim(), rating);
 		setContent("");
 		setRating(0);
 	}
