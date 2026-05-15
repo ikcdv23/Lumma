@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import type { Block, PartialBlock } from "@blocknote/core";
-import { updateNote } from "@/server/actions/notes-actions";
+import { updateNoteAction } from "@/server/note/note.actions";
 
 // BlockNote toca `window` durante el render → import dinámico sin SSR
 const BlockNoteEditor = dynamic(
@@ -57,7 +57,7 @@ export function EditableNote({ note, onSaveStatusChange }: Props) {
 
 		setSaveStatus("saving");
 		const timer = setTimeout(async () => {
-			await updateNote(
+			await updateNoteAction(
 				note.id,
 				blocks ? { title, content: blocks } : { title },
 			);

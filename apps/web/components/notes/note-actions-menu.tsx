@@ -11,7 +11,7 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { deleteNote } from "@/server/actions/notes-actions";
+import { deleteNoteAction } from "@/server/note/note.actions";
 import { MoveToFolderDialog } from "./move-to-folder-dialog";
 
 type Props = {
@@ -38,7 +38,7 @@ export function NoteActionsMenu({
 		if (!ok) return;
 
 		startDelete(async () => {
-			await deleteNote(noteId);
+			await deleteNoteAction(noteId);
 			if (redirectAfterDelete) router.push(redirectAfterDelete);
 		});
 	}

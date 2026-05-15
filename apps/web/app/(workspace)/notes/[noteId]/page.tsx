@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
-import { getNote } from "@/server/actions/notes-actions";
+import { requireAuthedUserId } from "@/lib/auth-helper";
+import * as noteService from "@/server/note/note.service";
 import { NoteDetailClient } from "@/components/notes/note-detail-client";
 
 type Props = {
@@ -7,8 +8,9 @@ type Props = {
 };
 
 export default async function NotePage({ params }: Props) {
+	const userId = await requireAuthedUserId();
 	const { noteId } = await params;
-	const note = await getNote(noteId);
+	const note = await noteService.getNote(userId, noteId);
 
 	if (!note) notFound();
 

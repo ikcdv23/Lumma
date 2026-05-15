@@ -4,7 +4,7 @@ import { useState } from "react";
 import { FileText } from "lucide-react";
 import { NoteCard } from "./note-card";
 import { NewNoteButton } from "./new-note-button";
-import { createNoteAndRedirect } from "@/server/actions/notes-actions";
+import { createNoteAndRedirectAction } from "@/server/note/note.actions";
 
 type Note = {
 	id: string;
@@ -32,7 +32,7 @@ export function NotesGrid({ folderId, folderName, notes }: NotesGridProps) {
 	}
 
 	const isEmpty = notes.length === 0;
-	const createNoteForFolder = createNoteAndRedirect.bind(null, folderId);
+	const createNoteForFolder = createNoteAndRedirectAction.bind(null, folderId);
 
 	return (
 		<>

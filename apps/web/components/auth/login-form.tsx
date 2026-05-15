@@ -1,14 +1,14 @@
 "use client"
 
 import { useActionState, useState } from "react";
-import { manualLogin } from "@/server/actions/auth-actions";
+import { loginAction } from "@/server/auth/auth.actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 
 export function LoginForm() {
-    const [state, formAction, isPending] = useActionState(manualLogin, null);
+    const [state, formAction, isPending] = useActionState(loginAction, null);
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
 

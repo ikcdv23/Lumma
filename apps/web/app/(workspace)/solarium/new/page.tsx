@@ -1,8 +1,8 @@
-import { redirect } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Sun } from "lucide-react";
-import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { requireAuthedUserId } from "@/lib/auth-helper";
+import * as folderService from "@/server/folder/folder.service";
+import * as noteService from "@/server/note/note.service";
 import { SessionConfig } from "@/components/solarium/session-config";
 
 export const metadata = {
@@ -10,39 +10,15 @@ export const metadata = {
 };
 
 export default async function NewSessionPage() {
-	const session = await auth();
-	if (!session?.user?.id) redirect("/login");
+	const userId = await requireAuthedUserId();
 
-	const userId = session.user.id;
-
-	const [folders, notes] = await Promise.all([
-		prisma.folder.findMany({
-			where: { userId },
-			select: {
-				id: true,
-				name: true,
-				_count: { select: { notes: true } },
-				notes: {
-					select: { id: true, title: true },
-					orderBy: { updatedAt: "desc" },
-				},
-			},
-			orderBy: { name: "asc" },
-		}),
-		prisma.note.findMany({
-			where: {
-				userId,
-				folder: null
-			},
-			select: {
-				id: true,
-				title: true,
-				folder: { select: { name: true } },
-			},
-			orderBy: { updatedAt: "desc" },
-			take: 50,
-		}),
+	const [folders, inboxNotes] = await Promise.all([
+		folderService.listFoldersWithNotes(userId),
+		noteService.getInboxNotes(userId),
 	]);
+
+	// SessionConfig solo necesita id+title para las notas sueltas
+	const notes = inboxNotes.map((n) => ({ id: n.id, title: n.title }));
 
 	return (
 		<div className="flex flex-col gap-8 p-6 md:p-8 w-full max-w-5xl mx-auto">

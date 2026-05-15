@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { FileText, Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { formatRelative } from "@/lib/format-date";
-import { searchNotes } from "@/server/actions/notes-actions";
+import { searchNotesAction } from "@/server/note/note.actions";
 
 type SearchResult = {
 	id: string;
@@ -31,7 +31,7 @@ export function NotesSearch() {
 
 		setIsLoading(true);
 		const timeout = setTimeout(async () => {
-			const data = await searchNotes(query);
+			const data = await searchNotesAction(query);
 			setResults(data);
 			setIsLoading(false);
 		}, 250);
