@@ -1,4 +1,5 @@
 import { ChevronDown, ChevronRight, FileText, Plus } from "lucide-react";
+import { PulseDot } from "@/components/loaders";
 import { cn } from "@/lib/utils";
 
 type FolderMaterial = {
@@ -121,8 +122,17 @@ export function MaterialSidebar({
 					disabled={creatingNote}
 					className="mt-4 flex items-center gap-1.5 rounded-md border border-dashed px-2 py-2 text-xs text-muted-foreground transition-colors hover:border-amber-400/60 hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
 				>
-					<Plus className="size-3.5" />
-					{creatingNote ? "Creando..." : "Nueva nota en esta sesión"}
+					{creatingNote ? (
+						<>
+							<PulseDot />
+							Creando nota
+						</>
+					) : (
+						<>
+							<Plus className="size-3.5" />
+							Nueva nota en esta sesión
+						</>
+					)}
 				</button>
 			</div>
 		</aside>
