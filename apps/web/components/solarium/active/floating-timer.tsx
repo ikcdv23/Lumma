@@ -1,4 +1,8 @@
+"use client";
+
+import { AnimatePresence, motion } from "motion/react";
 import { Check, Minus, Sun } from "lucide-react";
+import { TRANSITIONS } from "@/components/motion";
 
 export function FloatingTimer({
 	expanded,
@@ -17,45 +21,107 @@ export function FloatingTimer({
 	progress: number;
 	isCompleted: boolean;
 }) {
-	if (!expanded) {
-		return (
-			<button
-				type="button"
-				onClick={onToggle}
+	return (
+		<motion.div
+			layout
+			transition={TRANSITIONS.spring}
+			className={
+				expanded
+					? "fixed bottom-6 right-6 flex w-72 flex-col gap-3 rounded-xl border bg-card p-4 shadow-md"
+					: "fixed bottom-6 right-6"
+			}
+		>
+			{expanded ? (
+				<ExpandedTimer
+					onToggle={onToggle}
+					timerDisplay={timerDisplay}
+					targetMinutes={targetMinutes}
+					elapsedMinutes={elapsedMinutes}
+					progress={progress}
+					isCompleted={isCompleted}
+				/>
+			) : (
+				<CollapsedTimer
+					onToggle={onToggle}
+					timerDisplay={timerDisplay}
+					isCompleted={isCompleted}
+				/>
+			)}
+		</motion.div>
+	);
+}
+
+function CollapsedTimer({
+	onToggle,
+	timerDisplay,
+	isCompleted,
+}: {
+	onToggle: () => void;
+	timerDisplay: string;
+	isCompleted: boolean;
+}) {
+	return (
+		<motion.button
+			type="button"
+			onClick={onToggle}
+			layout
+			transition={TRANSITIONS.spring}
+			className={
+				isCompleted
+					? "flex items-center gap-2 rounded-full border border-amber-400 bg-amber-100 px-4 py-2 shadow-sm transition-colors hover:bg-amber-200"
+					: "flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-4 py-2 shadow-sm transition-colors hover:bg-amber-100"
+			}
+			aria-label="Expandir temporizador"
+		>
+			<motion.div layoutId="timer-icon">
+				{isCompleted ? (
+					<Check className="size-4 text-amber-600" />
+				) : (
+					<Sun className="size-4 text-amber-500" />
+				)}
+			</motion.div>
+			<motion.span
+				layoutId="timer-label"
 				className={
 					isCompleted
-						? "fixed bottom-6 right-6 flex items-center gap-2 rounded-full border border-amber-400 bg-amber-100 px-4 py-2 shadow-sm transition-colors hover:bg-amber-200"
-						: "fixed bottom-6 right-6 flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-4 py-2 shadow-sm transition-colors hover:bg-amber-100"
+						? "text-sm font-semibold text-amber-700"
+						: "text-sm font-semibold text-amber-700 tabular-nums"
 				}
-				aria-label="Expandir temporizador"
 			>
-				{isCompleted ? (
-					<>
-						<Check className="size-4 text-amber-600" />
-						<span className="text-sm font-semibold text-amber-700">
-							Completada
-						</span>
-					</>
-				) : (
-					<>
-						<Sun className="size-4 text-amber-500" />
-						<span className="text-sm font-semibold text-amber-700 tabular-nums">
-							{timerDisplay}
-						</span>
-					</>
-				)}
-			</button>
-		);
-	}
+				{isCompleted ? "Completada" : timerDisplay}
+			</motion.span>
+		</motion.button>
+	);
+}
 
+function ExpandedTimer({
+	onToggle,
+	timerDisplay,
+	targetMinutes,
+	elapsedMinutes,
+	progress,
+	isCompleted,
+}: {
+	onToggle: () => void;
+	timerDisplay: string;
+	targetMinutes: number;
+	elapsedMinutes: number;
+	progress: number;
+	isCompleted: boolean;
+}) {
 	return (
-		<div className="fixed bottom-6 right-6 flex w-72 flex-col gap-3 rounded-xl border bg-card p-4 shadow-md">
+		<>
 			<div className="flex items-start justify-between">
 				<div className="flex items-center gap-1.5">
-					<Sun className="size-4 text-amber-500" />
-					<span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+					<motion.div layoutId="timer-icon">
+						<Sun className="size-4 text-amber-500" />
+					</motion.div>
+					<motion.span
+						layoutId="timer-label"
+						className="text-xs font-medium text-muted-foreground uppercase tracking-wider"
+					>
 						{isCompleted ? "Completada" : "Pomodoro"}
-					</span>
+					</motion.span>
 				</div>
 				<button
 					type="button"
@@ -67,9 +133,15 @@ export function FloatingTimer({
 				</button>
 			</div>
 
-			<div className="text-center">
+			<AnimatePresence mode="wait">
 				{isCompleted ? (
-					<>
+					<motion.div
+						key="completed"
+						initial={{ opacity: 0, scale: 0.92 }}
+						animate={{ opacity: 1, scale: 1 }}
+						transition={TRANSITIONS.spring}
+						className="text-center"
+					>
 						<div className="mx-auto flex size-14 items-center justify-center rounded-full bg-amber-100">
 							<Check className="size-7 text-amber-600" />
 						</div>
@@ -79,25 +151,40 @@ export function FloatingTimer({
 						<div className="mt-1 text-xs text-muted-foreground">
 							{targetMinutes} min cumplidos
 						</div>
-					</>
+					</motion.div>
 				) : (
-					<>
-						<div className="text-5xl font-bold tabular-nums">{timerDisplay}</div>
+					<motion.div
+						key="running"
+						initial={{ opacity: 0 }}
+						animate={{ opacity: 1 }}
+						transition={TRANSITIONS.soft}
+						className="text-center"
+					>
+						<div className="text-5xl font-bold tabular-nums">
+							{timerDisplay}
+						</div>
 						<div className="mt-1 text-xs text-muted-foreground">
 							{targetMinutes} min · {elapsedMinutes} transcurridos
 						</div>
-					</>
+					</motion.div>
 				)}
-			</div>
+			</AnimatePresence>
 
 			{!isCompleted && (
-				<div className="h-1 overflow-hidden rounded-full bg-muted">
-					<div
-						className="h-full bg-amber-400 transition-all"
-						style={{ width: `${progress}%` }}
+				<motion.div
+					initial={{ opacity: 0 }}
+					animate={{ opacity: 1 }}
+					transition={{ ...TRANSITIONS.soft, delay: 0.1 }}
+					className="h-1 overflow-hidden rounded-full bg-muted"
+				>
+					<motion.div
+						className="h-full bg-amber-400"
+						initial={{ width: 0 }}
+						animate={{ width: `${progress}%` }}
+						transition={TRANSITIONS.soft}
 					/>
-				</div>
+				</motion.div>
 			)}
-		</div>
+		</>
 	);
 }

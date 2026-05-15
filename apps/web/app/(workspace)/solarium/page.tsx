@@ -4,6 +4,7 @@ import { Cloud, CloudSun, Sun, Zap } from "lucide-react";
 import { auth } from "@/auth";
 import { SkyToday } from "@/components/solarium/sky";
 import { SolariumInfoButton } from "@/components/solarium/solarium-info-button";
+import { FadeIn, SlideUp, Stagger, StaggerItem } from "@/components/motion";
 import * as solariumService from "@/server/solarium/solarium.service";
 
 export const metadata = { title: "Solarium" };
@@ -27,7 +28,7 @@ export default async function SolariumPage() {
 	return (
 		<div className="flex flex-col gap-8 p-6 md:p-8 w-full max-w-5xl mx-auto">
 			{/* Header */}
-			<div className="flex flex-col gap-1">
+			<FadeIn className="flex flex-col gap-1">
 				<div className="flex items-center gap-2">
 					<Sun className="size-7 text-amber-500" />
 					<h1 className="text-3xl font-bold tracking-tight">Solarium</h1>
@@ -36,62 +37,71 @@ export default async function SolariumPage() {
 				<p className="text-sm text-muted-foreground">
 					Tu espacio para sesiones de estudio enfocadas
 				</p>
-			</div>
+			</FadeIn>
 
 			{/* CTA principal */}
-			<Link
-				href="/solarium/new"
-				className="flex items-center gap-4 rounded-xl border bg-card p-5 transition-colors hover:border-amber-400/60"
-			>
-				<div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-amber-100">
-					<Zap className="size-5 text-amber-600" strokeWidth={2} />
-				</div>
-				<div className="flex flex-col items-start min-w-0">
-					<span className="text-base font-semibold">Empezar a estudiar</span>
-					<span className="text-xs text-muted-foreground">
-						Configura tu sesión enfocada
-					</span>
-				</div>
-			</Link>
+			<SlideUp delay={0.08}>
+				<Link
+					href="/solarium/new"
+					className="flex items-center gap-4 rounded-xl border bg-card p-5 transition-colors hover:border-amber-400/60"
+				>
+					<div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-amber-100">
+						<Zap className="size-5 text-amber-600" strokeWidth={2} />
+					</div>
+					<div className="flex flex-col items-start min-w-0">
+						<span className="text-base font-semibold">Empezar a estudiar</span>
+						<span className="text-xs text-muted-foreground">
+							Configura tu sesión enfocada
+						</span>
+					</div>
+				</Link>
+			</SlideUp>
 
 			{/* HERO — Cielo del día */}
-			<SkyToday
-				todayMinutes={todayMinutes}
-				target={TARGET}
-				streak={streak}
-			/>
+			<SlideUp delay={0.16}>
+				<SkyToday
+					todayMinutes={todayMinutes}
+					target={TARGET}
+					streak={streak}
+				/>
+			</SlideUp>
 
 			{/* Sesiones recientes */}
 			<section className="flex flex-col gap-3">
-				<h2 className="text-sm font-medium text-muted-foreground">
-					Sesiones recientes
-				</h2>
+				<FadeIn delay={0.24}>
+					<h2 className="text-sm font-medium text-muted-foreground">
+						Sesiones recientes
+					</h2>
+				</FadeIn>
 
 				{hasRecent ? (
-					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+					<Stagger className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
 						{recentSessions.map((s) => (
-							<RecentSessionCard
-								key={s.id}
-								folder={s.title}
-								duration={s.studyMinutes}
-								when={formatWhen(s.startedAt)}
-							/>
+							<StaggerItem key={s.id}>
+								<RecentSessionCard
+									folder={s.title}
+									duration={s.studyMinutes}
+									when={formatWhen(s.startedAt)}
+								/>
+							</StaggerItem>
 						))}
-					</div>
+					</Stagger>
 				) : (
-					<div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed py-12 px-6 text-center">
-						<div className="flex size-12 items-center justify-center rounded-full bg-amber-100">
-							<Sun className="size-6 text-amber-500" />
+					<FadeIn delay={0.3}>
+						<div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed py-12 px-6 text-center">
+							<div className="flex size-12 items-center justify-center rounded-full bg-amber-100">
+								<Sun className="size-6 text-amber-500" />
+							</div>
+							<div className="flex flex-col gap-1">
+								<h3 className="text-base font-semibold">
+									Aún no tienes sesiones
+								</h3>
+								<p className="text-sm text-muted-foreground max-w-xs">
+									Empieza una para llenar tu cielo
+								</p>
+							</div>
 						</div>
-						<div className="flex flex-col gap-1">
-							<h3 className="text-base font-semibold">
-								Aún no tienes sesiones
-							</h3>
-							<p className="text-sm text-muted-foreground max-w-xs">
-								Empieza una para llenar tu cielo
-							</p>
-						</div>
-					</div>
+					</FadeIn>
 				)}
 			</section>
 		</div>

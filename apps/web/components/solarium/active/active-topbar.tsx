@@ -20,6 +20,7 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Spinner } from "@/components/loaders";
 import { cn } from "@/lib/utils";
 
 type Tab = "notas" | "tareas" | "tablero";
@@ -121,7 +122,17 @@ export function ActiveTopbar({
 							disabled={abandonPending}
 							className="bg-red-500 hover:bg-red-600 text-white"
 						>
-							{abandonPending ? "Saliendo..." : "Sí, abandonar"}
+							{abandonPending ? (
+								<>
+									<Spinner
+										size="sm"
+										className="border-white border-t-transparent"
+									/>
+									Saliendo
+								</>
+							) : (
+								"Sí, abandonar"
+							)}
 						</AlertDialogAction>
 					</AlertDialogFooter>
 				</AlertDialogContent>
