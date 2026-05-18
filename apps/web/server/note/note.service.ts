@@ -74,10 +74,6 @@ export async function createEmptyNoteForRedirect(
 	});
 }
 
-export function createNoteInSession(userId: string, sessionId: string) {
-	return noteRepository.createForSession({ userId, sessionId });
-}
-
 export function updateNote(
 	userId: string,
 	noteId: string,

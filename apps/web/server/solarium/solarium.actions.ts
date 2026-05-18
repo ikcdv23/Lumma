@@ -3,7 +3,6 @@
 import { revalidatePath } from "next/cache";
 import { getAuthedUserId } from "@/lib/auth-helper";
 import * as solariumService from "./solarium.service";
-import * as noteService from "@/server/note/note.service";
 
 export async function createSessionAction(input: {
 	title: string | null;
@@ -67,11 +66,31 @@ export async function createNoteInActiveSessionAction() {
 	const userId = await getAuthedUserId();
 	if (!userId) return null;
 
-	const active = await solariumService.getActiveSession(userId);
-	if (!active) return null;
-
-	const newNote = await noteService.createNoteInSession(userId, active.id);
+	const newNote = await solariumService.createNoteInActiveSession(userId);
 
 	revalidatePath("/active");
 	return newNote;
+}
+
+export async function createFolderInActiveSessionAction() {
+	const userId = await getAuthedUserId();
+	if (!userId) return null;
+
+	const newFolder = await solariumService.createFolderInActiveSession(userId);
+
+	revalidatePath("/active");
+	return newFolder;
+}
+
+export async function detachFolderFromActiveSessionAction(folderId: string) {
+	const userId = await getAuthedUserId();
+	if (!userId) return null;
+
+	const detached = await solariumService.detachFolderFromActiveSession(
+		userId,
+		folderId,
+	);
+
+	revalidatePath("/active");
+	return detached;
 }
