@@ -9,11 +9,13 @@ import {
 	createNoteInActiveSessionAction,
 	heartbeatAction,
 } from "@/server/solarium/solarium.actions";
+import { useNavigationGuard } from "@/hooks/use-navigation-guard";
 import { ActiveTopbar } from "./active-topbar";
 import { ComingSoon } from "./coming-soon";
 import { FloatingTimer } from "./floating-timer";
 import { MaterialSidebar } from "./material-sidebar";
 import { ActiveNoteEditor } from "./active-note-editor";
+import { AbandonModal } from "./abandon-modal";
 
 type FolderMaterial = {
 	id: string;
@@ -118,24 +120,22 @@ export function ActiveSession({
 		});
 	}, [remainingSeconds, sessionId, targetMinutes]);
 
-	// beforeunload: si el user cierra/refresca con la sesión todavía activa,
-	// disparar un sendBeacon que marque como abandoned con los minutos hechos.
-	// Si ya está completada, no hace falta.
+	const elapsedMinutesRef = useRef(elapsedMinutes);
 	useEffect(() => {
-		if (isCompleted) return;
-		const handler = () => {
-			const payload = JSON.stringify({
-				sessionId,
-				studyMinutes: elapsedMinutes,
-			});
-			navigator.sendBeacon(
-				"/api/solarium/abandon",
-				new Blob([payload], { type: "application/json" }),
-			);
-		};
-		window.addEventListener("beforeunload", handler);
-		return () => window.removeEventListener("beforeunload", handler);
-	}, [sessionId, elapsedMinutes, isCompleted]);
+		elapsedMinutesRef.current = elapsedMinutes;
+	}, [elapsedMinutes]);
+
+	const { pendingHref, isConfirming, confirmExit, cancelExit } =
+		useNavigationGuard({
+			when: !isCompleted && !isAbandoning,
+			onConfirmExit: async () => {
+				await abandonSessionAction(
+					sessionId,
+					elapsedMinutesRef.current,
+					0,
+				);
+			},
+		});
 
 	const toggleFolder = (id: string) => {
 		setOpenFolders((prev) => {
@@ -214,6 +214,13 @@ export function ActiveSession({
 				elapsedDisplay={elapsedDisplay}
 				progress={progress}
 				isCompleted={isCompleted}
+			/>
+			<AbandonModal
+				open={pendingHref !== null}
+				pending={isConfirming}
+				elapsedMinutes={elapsedMinutes}
+				onCancel={cancelExit}
+				onConfirm={confirmExit}
 			/>
 		</div>
 	);

@@ -1,8 +1,8 @@
 import Link from "next/link";
 import FastNotes from "@/components/notes/fast-note-card";
 import { Inbox } from "lucide-react";
-import { auth } from "@/auth";
 import { requireAuthedUserId } from "@/lib/auth-helper";
+import { prisma } from "@/lib/prisma";
 import { FolderPill } from "@/components/folders/folder-pill";
 import * as folderService from "@/server/folder/folder.service";
 import * as noteService from "@/server/note/note.service";
@@ -14,13 +14,16 @@ export const metadata = {
 
 export default async function HomePage() {
 	const userId = await requireAuthedUserId();
-	const session = await auth();
-	const userName = session?.user?.name ?? "tu";
-	const [folders, inboxCount, recentNotes] = await Promise.all([
+	const [dbUser, folders, inboxCount, recentNotes] = await Promise.all([
+		prisma.user.findUnique({
+			where: { id: userId },
+			select: { name: true },
+		}),
 		folderService.listFolders(userId),
 		noteService.getInboxCount(userId),
 		noteService.getRecentNotes(userId, 10),
 	]);
+	const userName = dbUser?.name ?? "tu";
 
 	return (
 		<div className="flex flex-col gap-10 p-6 md:p-12 w-full max-w-5xl mx-auto">
