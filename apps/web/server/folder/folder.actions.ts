@@ -51,3 +51,4 @@ export async function listFoldersAction() {
 
 	return folderService.listFolders(userId);
 }
+

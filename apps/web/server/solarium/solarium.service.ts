@@ -139,3 +139,24 @@ function defaultSessionTitle(): string {
 		year: "numeric",
 	})}`;
 }
+
+export async function detachFolderFromActiveSession(userId: string, folderId: string) {
+	const active = await getActiveSession(userId);
+	if (!active) return null;
+
+	return folderRepository.detachFromSession(folderId, userId, active.id);
+}
+
+export async function createNoteInActiveSession(userId: string) {
+	const active = await getActiveSession(userId);
+	if (!active) return null;
+
+	return noteRepository.createForSession({ userId, sessionId: active.id });
+}
+
+export async function createFolderInActiveSession(userId: string) {
+	const active = await getActiveSession(userId);
+	if (!active) return null;
+
+	return folderRepository.createForSession({ userId, sessionId: active.id });
+}
