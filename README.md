@@ -1,218 +1,268 @@
+<div align="center">
+
 # Lumma
 
-App de notas para estudiantes y productividad.
+**Notas y estudio enfocado para estudiantes y curiosos.**
 
+Una app de notas con un modo de estudio sin distracciones: eliges qué material vas a usar, pones un timer y desapareces del mundo hasta que tu sol se ponga.
+
+[![Next.js](https://img.shields.io/badge/Next.js-16-000?logo=nextdotjs&logoColor=white)](https://nextjs.org)
+[![React](https://img.shields.io/badge/React-19-61dafb?logo=react&logoColor=white)](https://react.dev)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
+[![Prisma](https://img.shields.io/badge/Prisma-7-2d3748?logo=prisma&logoColor=white)](https://www.prisma.io)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791?logo=postgresql&logoColor=white)](https://www.postgresql.org)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-4-06b6d4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
+
+<br/>
+
+<img src="apps/web/public/img/home-page.png" alt="Pantalla principal de Lumma" width="100%"/>
+
+</div>
+
+<br/>
+
+> [!NOTE]
 > Si retomas el proyecto después de un break o estás en otra máquina, lee primero [`docs/handoff.md`](docs/handoff.md) para tener el contexto completo.
 
-## Features actuales
+<br/>
 
-- **Auth**: registro/login con email + password (Zod + bcrypt) y Google OAuth
-- **Notas**: CRUD con editor rich text (BlockNote) y autosave
-- **Carpetas**: organización de notas con CRUD completo
-- **Inbox**: vista de notas sin clasificar (quick notes)
-- **Quick capture**: tarjeta animada en `/home` que se expande a editor fullscreen
-- **Feedback**: foro de comunidad con votos y rating de estrellas
+## Features
+
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <h3>Notas rápidas con captura animada</h3>
+      <p>Una tarjeta en <code>/home</code> se expande a editor fullscreen con animación shared-layout. Lo que escribes va directo a tu Inbox con autosave por debounce.</p>
+    </td>
+    <td width="50%">
+      <img src="apps/web/public/img/notes-grid.png" alt="Grid de notas"/>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <img src="apps/web/public/img/notion-like-editor.png" alt="Editor estilo Notion con BlockNote"/>
+    </td>
+    <td width="50%" valign="top">
+      <h3>Editor rico tipo Notion</h3>
+      <p>Construido sobre <a href="https://www.blocknotejs.org">BlockNote</a> con Shiki para syntax highlighting en 14 lenguajes. Autosave silencioso con indicador de estado.</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <h3>Solarium — sesiones de estudio enfocadas</h3>
+      <p>El modo Zen de Lumma. Eliges carpetas y notas, fijas duración y entras a un workspace sin distracciones — sin sidebar, con timer flotante y pestañas multi-herramienta sobre tu material.</p>
+      <p><em>Tu sol amanece, llega al mediodía y se pone según los minutos que estudias al día.</em></p>
+    </td>
+    <td width="50%">
+      <img src="apps/web/public/img/solarium-01.png" alt="Página de Solarium con progreso del día"/>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <img src="apps/web/public/img/solarium-config.png" alt="Configuración de sesión Solarium"/>
+    </td>
+    <td width="50%" valign="top">
+      <h3>Configuración mínima, foco máximo</h3>
+      <p>Pomodoro, sprint o sesión libre. Selecciona el material en segundos y empieza. Sin friction, sin opciones de más.</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <h3>Workspace activo y timer flotante</h3>
+      <p>Editor, tareas y tablero como pestañas en el mismo espacio. El timer queda colapsado por defecto en una esquina y se expande con un click — no rompe tu concentración.</p>
+    </td>
+    <td width="50%">
+      <img src="apps/web/public/img/solarium-02.png" alt="Workspace activo en Solarium"/>
+    </td>
+  </tr>
+</table>
+
+<br/>
 
 ## Stack
 
-- **Framework**: Next.js 16 (App Router) + React 19
-- **DB**: PostgreSQL (Docker en local, Neon en producción)
-- **ORM**: Prisma 7
-- **Auth**: NextAuth.js v5
-- **UI**: Tailwind CSS 4 + Shadcn/ui (Radix primitives)
-- **Animaciones**: motion (framer-motion)
-- **Editor**: BlockNote
-- **Validación**: Zod
-- **Hosting**: Vercel
-- **Monorepo**: Turborepo + pnpm workspaces
+- **Framework** — Next.js 16 (App Router) + React 19
+- **Lenguaje** — TypeScript 5.9 estricto
+- **Base de datos** — PostgreSQL 16 (Docker local, [Neon](https://neon.tech) en producción)
+- **ORM** — Prisma 7
+- **Auth** — NextAuth.js v5 (Google OAuth + Credentials con bcrypt)
+- **UI** — Tailwind CSS 4 + [Shadcn/ui](https://ui.shadcn.com) sobre Radix primitives
+- **Animaciones** — [motion](https://motion.dev) (Framer Motion)
+- **Editor** — [BlockNote](https://www.blocknotejs.org) + Shiki
+- **Validación** — Zod
+- **Hosting** — Vercel
+- **Monorepo** — Turborepo + pnpm workspaces
 
-## Requisitos
+<br/>
 
-- **Node.js** >= 20.19 (`nvm install 20 && nvm use 20`)
-- **pnpm** 9 (`npm install --global corepack@latest && corepack enable`)
-- **Docker** (para PostgreSQL local)
+## Setup
 
-## Setup desde cero
+### Requisitos
 
-### 1. Clonar e instalar
+- Node.js >= 20.19 (`nvm install 20`)
+- pnpm 9 (`corepack enable`)
+- Docker (PostgreSQL local)
+
+### Levantar el proyecto
 
 ```bash
 git clone <url-del-repo>
 cd Lumma
 pnpm install
-```
-
-### 2. Levantar la base de datos local
-
-```bash
 docker compose up -d
 ```
 
-PostgreSQL 16 en el puerto 5432: usuario `lumma`, password `lumma123`, base de datos `lumma`.
-
-### 3. Variables de entorno
-
-Crea `apps/web/.env.local` (lo usa Next.js):
+Crea `apps/web/.env.local`:
 
 ```env
 DATABASE_URL="postgresql://lumma:lumma123@localhost:5432/lumma"
-AUTH_SECRET="cualquier-string-secreto-aqui"
-GOOGLE_CLIENT_ID="tu-client-id-de-google"
-GOOGLE_CLIENT_SECRET="tu-client-secret-de-google"
+AUTH_SECRET="cualquier-string-secreto"
+GOOGLE_CLIENT_ID="..."
+GOOGLE_CLIENT_SECRET="..."
 ```
 
-Genera un `AUTH_SECRET` con:
-```bash
-node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
-```
+> Genera un secret con `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`. Credenciales de Google en [Google Cloud Console](https://console.cloud.google.com/apis/credentials).
 
-Las credenciales de Google se configuran en [Google Cloud Console](https://console.cloud.google.com/apis/credentials).
-
-> **Nota**: Prisma usa `apps/web/.env` (sin `.local`) por su `prisma.config.ts`. La `DATABASE_URL` debe estar en ambos archivos.
-
-### 4. Aplicar migraciones a la BD local
+Aplica migraciones y arranca:
 
 ```bash
-cd apps/web
-pnpm prisma migrate dev
+cd apps/web && pnpm prisma migrate dev
+cd ../.. && pnpm dev
 ```
 
-### 5. Arrancar el proyecto
+Abre [http://localhost:3000](http://localhost:3000). 🎉
 
-```bash
-pnpm dev
-```
+<br/>
 
-Abre http://localhost:3000.
-
-## Flujo de desarrollo
-
-### Día a día (solo código)
-
-```bash
-docker compose up -d        # si no está corriendo
-pnpm dev
-```
-
-### Cuando cambias el schema de Prisma
+<details>
+<summary><b>Cambios en el schema de Prisma</b></summary>
 
 ```bash
 cd apps/web
 pnpm prisma migrate dev --name "descripcion-del-cambio"
 ```
 
-Aplica la migración a Docker local y regenera el cliente Prisma.
+> Tras cualquier `prisma migrate` o `prisma generate`, **mata el dev server y arráncalo de nuevo**. Next.js cachea el cliente Prisma en `globalThis` y el hot reload no lo recoge.
 
-> **Importante**: tras cualquier migración o `prisma generate`, **mata el dev server (Ctrl+C) y vuelve a arrancarlo**. Next.js cachea el cliente Prisma en `globalThis` y no se actualiza con hot reload.
+</details>
 
-### Antes de hacer push (si hay migraciones nuevas)
+<details>
+<summary><b>Aplicar migraciones a Neon (antes de pushear)</b></summary>
 
-Hay que aplicarlas a Neon (la BD de producción) ANTES de pushear, o el deploy de Vercel fallará.
+Vercel compila contra Neon. Si pusheas con una migración sin aplicar, el build cae.
 
-1. Editar `apps/web/.env`:
-   - Comentar `DATABASE_URL` de Docker
-   - Descomentar la `DATABASE_URL` de Neon
-2. Verifica el SQL antes de aplicar:
-   ```bash
-   cat prisma/migrations/[ultima-migracion]/migration.sql
-   ```
-3. Aplica a Neon:
-   ```bash
-   cd apps/web
-   pnpm prisma migrate deploy
-   ```
-4. Revertir `.env` (descomentar Docker, comentar Neon)
+1. Edita `apps/web/.env`: comenta el `DATABASE_URL` de Docker y descomenta el de Neon.
+2. Inspecciona el SQL: `cat apps/web/prisma/migrations/<latest>/migration.sql`
+3. Aplica: `cd apps/web && pnpm prisma migrate deploy`
+4. Revierte `.env` a Docker.
 
-### Push
+</details>
 
-```bash
-git push
-```
-
-Vercel detecta el push y despliega automáticamente.
-
-## Producción
-
-- **Hosting**: Vercel (https://lumma-web.vercel.app)
-- **Base de datos**: Neon (PostgreSQL serverless)
-- **Auth**: NextAuth.js con Google OAuth + Credentials
-
-Las variables de entorno en producción se configuran en Vercel → Settings → Environment Variables.
-
-## Comandos útiles
+<details>
+<summary><b>Comandos útiles</b></summary>
 
 | Comando | Qué hace |
 |---------|----------|
-| `pnpm dev` | Arranca todos los dev servers |
+| `pnpm dev` | Arranca todos los dev servers (web:3000, docs:3001) |
 | `pnpm build` | Compila todo el monorepo |
 | `pnpm lint` | Linter (cero warnings) |
-| `pnpm check-types` | Verificar tipos TypeScript |
+| `pnpm check-types` | Verificar tipos |
+| `pnpm format` | Prettier |
 | `docker compose up -d` | Levantar PostgreSQL local |
-| `docker compose down` | Parar PostgreSQL |
-| `pnpm prisma studio` | UI visual para ver la BD |
-| `pnpm prisma migrate dev --name X` | Crear y aplicar migración local |
-| `pnpm prisma migrate deploy` | Aplicar migraciones (Neon en prod) |
-| `pnpm prisma generate` | Regenerar cliente Prisma manualmente |
+| `pnpm prisma studio` | UI visual para inspeccionar la BD |
 
-## Estructura del monorepo
+</details>
+
+<br/>
+
+## Arquitectura
+
+Turborepo monorepo, **3 capas por feature** dentro de `apps/web/server/`:
 
 ```
-apps/web/                       App principal (Next.js 16, React 19)
-  ├── app/
-  │   ├── (auth)/               Rutas públicas (login, register)
-  │   └── (workspace)/          Rutas autenticadas con sidebar
-  │       ├── home/
-  │       ├── inbox/
-  │       ├── folders/
-  │       ├── feedback/
-  │       └── notes/[noteId]/
-  ├── components/
-  │   ├── ui/                   Shadcn primitivos
-  │   ├── auth/
-  │   ├── folders/
-  │   ├── notes/
-  │   └── feedback/
-  ├── server/
-  │   └── actions/              Server actions (CRUD por entidad)
-  ├── schemas/                  Zod schemas
-  ├── lib/                      Utilidades (prisma, format-date, utils)
-  └── prisma/                   Schema y migraciones
-
-apps/docs                       Documentación (Next.js)
-packages/ui                     Componentes compartidos
-docs/                           Apuntes y documentación del proyecto (Obsidian)
-  ├── handoff.md                ⚠️ Estado actual del proyecto - LEER PRIMERO
-  ├── plan/
-  ├── concepts/
-  ├── decisions/
-  └── changelog/
+repository.ts  →  Acceso a datos. Prisma filtrado por userId. Sin auth, sin lógica.
+service.ts     →  Lógica de negocio. Recibe userId, llama al repo. Validación, algoritmos.
+actions.ts     →  "use server" mutations. Auth + service + revalidatePath. Capa fina.
 ```
 
-## Notas por SO
+**Reglas básicas**
 
-- **Linux**: nvm viene en la terminal directamente
-- **Windows**: usa [nvm-windows](https://github.com/coreybutler/nvm-windows) para gestionar versiones de Node. Docker Desktop para los contenedores
+- Los **services no llaman a otros services**. La orquestación cross-feature ocurre en la action.
+- Las lecturas cross-feature van directas al repository de la otra feature.
+- Server Components leen del service directamente. Solo las mutaciones pasan por actions.
+
+Detalle completo en [`docs/concepts/arquitectura.md`](docs/concepts/arquitectura.md).
+
+```
+apps/
+  web/                     App principal (Next.js 16)
+    app/
+      (auth)/              login, register
+      (workspace)/         home, inbox, folders, notes, feedback, profile, solarium
+      (solariumspace)/     /active — workspace sin distracciones
+    components/
+      ui/                  Shadcn primitives
+      motion/              Variantes y wrappers de motion
+      loaders/             Spinner, progress bar, skeletons
+      auth/ folders/ notes/ feedback/ solarium/ profile/
+    server/
+      auth/ user/ folder/ note/ feedback/ solarium/
+    prisma/                Schema y migraciones
+  docs/                    Docs site
+
+docs/                      Apuntes Obsidian
+  handoff.md               ⚠ Estado actual del proyecto
+  concepts/ plan/ decisions/ changelog/
+```
+
+<br/>
+
+## Producción
+
+Hosting en [Vercel](https://vercel.com), base de datos en [Neon](https://neon.tech). Variables de entorno en Vercel → Settings → Environment Variables. El build corre `prisma generate && next build`.
+
+<br/>
 
 ## Troubleshooting
 
-### "Cannot read properties of undefined (reading 'findMany')"
+<details>
+<summary><b><code>Cannot read properties of undefined (reading 'findMany')</code></b></summary>
 
-El cliente Prisma está en caché viejo. Soluciones:
+Cliente Prisma cacheado. Soluciones:
+
 1. `pnpm prisma generate`
-2. Mata el dev server (`Ctrl+C`) y arranca con `pnpm dev`
-3. Reinicia el TS server del editor (VSCode: `Ctrl+Shift+P` → "TypeScript: Restart TS Server")
+2. Mata el dev server (`Ctrl+C`) y `pnpm dev`
+3. Reinicia TS Server del editor
 
-### Vercel build falla con "column does not exist"
+</details>
 
-Olvidaste aplicar la migración a Neon antes de pushear. Aplica el [Workflow de migraciones a Neon](#antes-de-hacer-push-si-hay-migraciones-nuevas) y vuelve a deployar.
+<details>
+<summary><b>Vercel falla con <code>column does not exist</code></b></summary>
 
-### Error de hidratación en sidebar
+No aplicaste la migración a Neon antes de pushear. Sigue el workflow de Neon de arriba y vuelve a deployar.
 
-Es un mismatch conocido de Radix `Slot` + Next `Link` con `asChild`. Es **recoverable** y no afecta a la funcionalidad. Solo aparece en consola de dev. Se ignora.
+</details>
 
-### "OAuth client was not found" en Google login
+<details>
+<summary><b>Error de hidratación en sidebar</b></summary>
 
-Las credenciales en `.env.local` no coinciden con las de Google Cloud Console. Verifica:
-1. El `GOOGLE_CLIENT_ID` y `GOOGLE_CLIENT_SECRET` están bien copiados (sin comillas raras, sin espacios)
-2. La URL `http://localhost:3000/api/auth/callback/google` está en "Authorized redirect URIs" del cliente OAuth
-3. Reiniciaste `pnpm dev` tras editar el archivo
+Mismatch conocido de Radix `Slot` + Next `Link` con `asChild`. **Recoverable**, solo aparece en dev. Se ignora.
+
+</details>
+
+<details>
+<summary><b><code>OAuth client was not found</code> en Google login</b></summary>
+
+Credenciales mal copiadas o sin la redirect URI configurada:
+
+1. `GOOGLE_CLIENT_ID`/`SECRET` sin comillas raras ni espacios
+2. `http://localhost:3000/api/auth/callback/google` en "Authorized redirect URIs" del cliente OAuth
+3. Reinicia `pnpm dev` tras editar el `.env`
+
+</details>
+
+<br/>
+
+<div align="center">
+  <sub>Hecho con cariño por <a href="https://github.com/ikcdv23">Javier</a>.</sub>
+</div>

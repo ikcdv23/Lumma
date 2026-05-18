@@ -9,7 +9,7 @@ export function FloatingTimer({
 	onToggle,
 	timerDisplay,
 	targetMinutes,
-	elapsedMinutes,
+	elapsedDisplay,
 	progress,
 	isCompleted,
 }: {
@@ -17,7 +17,7 @@ export function FloatingTimer({
 	onToggle: () => void;
 	timerDisplay: string;
 	targetMinutes: number;
-	elapsedMinutes: number;
+	elapsedDisplay: string;
 	progress: number;
 	isCompleted: boolean;
 }) {
@@ -36,7 +36,7 @@ export function FloatingTimer({
 					onToggle={onToggle}
 					timerDisplay={timerDisplay}
 					targetMinutes={targetMinutes}
-					elapsedMinutes={elapsedMinutes}
+					elapsedDisplay={elapsedDisplay}
 					progress={progress}
 					isCompleted={isCompleted}
 				/>
@@ -98,14 +98,14 @@ function ExpandedTimer({
 	onToggle,
 	timerDisplay,
 	targetMinutes,
-	elapsedMinutes,
+	elapsedDisplay,
 	progress,
 	isCompleted,
 }: {
 	onToggle: () => void;
 	timerDisplay: string;
 	targetMinutes: number;
-	elapsedMinutes: number;
+	elapsedDisplay: string;
 	progress: number;
 	isCompleted: boolean;
 }) {
@@ -164,7 +164,7 @@ function ExpandedTimer({
 							{timerDisplay}
 						</div>
 						<div className="mt-1 text-xs text-muted-foreground">
-							{targetMinutes} min · {elapsedMinutes} transcurridos
+							{targetMinutes} min · {elapsedDisplay} transcurridos
 						</div>
 					</motion.div>
 				)}
