@@ -10,18 +10,8 @@ import {
 	X,
 	type LucideIcon,
 } from "lucide-react";
-import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Spinner } from "@/components/loaders";
 import { cn } from "@/lib/utils";
+import { AbandonModal } from "./abandon-modal";
 
 type Tab = "notas" | "tareas" | "tablero";
 
@@ -102,41 +92,13 @@ export function ActiveTopbar({
 				</button>
 			)}
 
-			<AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-				<AlertDialogContent>
-					<AlertDialogHeader>
-						<AlertDialogTitle>¿Abandonar la sesión?</AlertDialogTitle>
-						<AlertDialogDescription>
-							Esta sesión se marcará como abandonada y{" "}
-							<strong>no contará para tu racha</strong>. Llevas{" "}
-							{elapsedMinutes}{" "}
-							{elapsedMinutes === 1 ? "minuto" : "minutos"} de estudio.
-						</AlertDialogDescription>
-					</AlertDialogHeader>
-					<AlertDialogFooter>
-						<AlertDialogCancel disabled={abandonPending}>
-							Quedarme
-						</AlertDialogCancel>
-						<AlertDialogAction
-							onClick={onAbandon}
-							disabled={abandonPending}
-							className="bg-red-500 hover:bg-red-600 text-white"
-						>
-							{abandonPending ? (
-								<>
-									<Spinner
-										size="sm"
-										className="border-white border-t-transparent"
-									/>
-									Saliendo
-								</>
-							) : (
-								"Sí, abandonar"
-							)}
-						</AlertDialogAction>
-					</AlertDialogFooter>
-				</AlertDialogContent>
-			</AlertDialog>
+			<AbandonModal
+				open={confirmOpen}
+				pending={abandonPending}
+				elapsedMinutes={elapsedMinutes}
+				onCancel={() => setConfirmOpen(false)}
+				onConfirm={onAbandon}
+			/>
 		</header>
 	);
 }
