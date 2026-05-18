@@ -104,6 +104,7 @@ export function ActiveSession({
 	const targetSeconds = targetMinutes * 60;
 	const elapsedSeconds = targetSeconds - remainingSeconds;
 	const elapsedMinutes = Math.floor(elapsedSeconds / 60);
+	const elapsedDisplay = `${String(elapsedMinutes).padStart(2, "0")}:${String(elapsedSeconds % 60).padStart(2, "0")}`;
 	const progress = (elapsedSeconds / targetSeconds) * 100;
 
 	// Auto-complete cuando el timer llega a 0
@@ -210,7 +211,7 @@ export function ActiveSession({
 				onToggle={() => setTimerExpanded((e) => !e)}
 				timerDisplay={timerDisplay}
 				targetMinutes={targetMinutes}
-				elapsedMinutes={elapsedMinutes}
+				elapsedDisplay={elapsedDisplay}
 				progress={progress}
 				isCompleted={isCompleted}
 			/>
