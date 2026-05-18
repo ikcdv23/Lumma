@@ -5,8 +5,11 @@ import { motion, AnimatePresence } from "motion/react";
 import { Inbox, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SaveIndicator } from "@/components/ui/save-indicator";
-import { createNoteAction, updateNoteAction } from "@/server/note/note.actions";
-import { EditableNote } from "./editable-note";
+import {
+	createNoteAction,
+	deleteNoteAction,
+} from "@/server/note/note.actions";
+import { EditableNote, type SaveStatus } from "./editable-note";
 
 type FastNotesProps = {
 	userName: string;
@@ -18,31 +21,30 @@ type FastNotesProps = {
 
 export default function FastNotes({ note, userName }: FastNotesProps) {
 	const [isExpanded, setIsExpanded] = useState(false);
-	const [title, setTitle] = useState(note?.title ?? "");
-	const [noteText, setNoteText] = useState(note?.content ?? "");
-	const [noteId, setNoteId] = useState<string | null>(null);
-	const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">(
-		"idle",
-	); 
-	const titleRef = useRef<HTMLInputElement>(null);
+	const [draftId, setDraftId] = useState<string | null>(null);
+	const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
+	const isDirtyRef = useRef(false);
+
+	// Al abrir el modal creamos una nota draft vacía en Inbox. EditableNote
+	// la edita por id real. Si el usuario cierra sin escribir, handleClose
+	// la borra. Si el usuario cierra antes de que createNoteAction resuelva,
+	// el cleanup del effect la borra cuando vuelve.
 	useEffect(() => {
-		// Guard: si no hay nada escrito, no haces nada
-		if (!title.trim() && !noteText.trim()) return;
-
-		setSaveStatus("saving");
-
-		const timer = setTimeout(async () => {
-			if (noteId === null) {
-				const note = await createNoteAction(null, title, noteText);
-				if (note) setNoteId(note.id);
-			} else {
-				await updateNoteAction(noteId, { title, content: noteText });
+		if (!isExpanded || draftId !== null) return;
+		let cancelled = false;
+		(async () => {
+			const created = await createNoteAction(null, "", "");
+			if (!created) return;
+			if (cancelled) {
+				await deleteNoteAction(created.id);
+				return;
 			}
-			setSaveStatus("saved");
-		}, 600);
-
-		return () => clearTimeout(timer);
-	}, [title, noteText]);
+			setDraftId(created.id);
+		})();
+		return () => {
+			cancelled = true;
+		};
+	}, [isExpanded, draftId]);
 
 	// Auto-fade del "Guardado" a "idle" pasados 2s
 	useEffect(() => {
@@ -62,13 +64,19 @@ export default function FastNotes({ note, userName }: FastNotesProps) {
 		return () => window.removeEventListener("keydown", onKey);
 	}, [isExpanded]);
 
-	function handleClose() {
+	async function handleClose() {
+		const id = draftId;
+		const dirty = isDirtyRef.current;
 		setIsExpanded(false);
-		setTitle("");
-		setNoteText("");
-		setNoteId(null);
+		setDraftId(null);
 		setSaveStatus("idle");
+		isDirtyRef.current = false;
+		if (id && !dirty) {
+			await deleteNoteAction(id);
+		}
 	}
+
+	const previewText = note?.content ?? "";
 
 	return (
 		<div>
@@ -98,7 +106,7 @@ export default function FastNotes({ note, userName }: FastNotesProps) {
 							<span className="font-medium">Nota rapida</span>
 						</div>
 						<p className="text-muted-foreground">
-							{noteText || "Escribe lo que tengas en mente..."}
+							{previewText || "Escribe lo que tengas en mente..."}
 						</p>
 					</motion.button>
 				)}
@@ -131,7 +139,6 @@ export default function FastNotes({ note, userName }: FastNotesProps) {
 								damping: 28,
 								stiffness: 220,
 							}}
-							onAnimationComplete={() => titleRef.current?.focus()}
 						>
 							{/* Header del modal */}
 							<div className="flex items-center justify-between gap-4 border-b px-6 py-4">
@@ -162,13 +169,17 @@ export default function FastNotes({ note, userName }: FastNotesProps) {
 
 							{/* Editor */}
 							<div className="flex-1 overflow-auto p-8 md:p-12">
-
-
-								<EditableNote note={{
-									id: "",
-									title: "",
-									content: undefined
-								}}/>
+								{draftId ? (
+									<EditableNote
+										note={{ id: draftId, title: "", content: undefined }}
+										onSaveStatusChange={setSaveStatus}
+										onDirtyChange={(dirty) => {
+											isDirtyRef.current = dirty;
+										}}
+									/>
+								) : (
+									<div className="my-4 h-32 animate-pulse rounded-md bg-muted/30" />
+								)}
 							</div>
 						</motion.div>
 					</>

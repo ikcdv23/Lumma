@@ -25,6 +25,7 @@ type Props = {
 		content: unknown;
 	};
 	onSaveStatusChange?: (status: SaveStatus) => void;
+	onDirtyChange?: (dirty: boolean) => void;
 };
 
 // Convierte el content de la BD al formato que BlockNote acepta
@@ -41,7 +42,11 @@ function toInitialBlocks(content: unknown): PartialBlock[] | undefined {
 	return undefined;
 }
 
-export function EditableNote({ note, onSaveStatusChange }: Props) {
+export function EditableNote({
+	note,
+	onSaveStatusChange,
+	onDirtyChange,
+}: Props) {
 	const [title, setTitle] = useState(note.title);
 	const [blocks, setBlocks] = useState<Block[] | null>(null);
 	const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
@@ -50,6 +55,14 @@ export function EditableNote({ note, onSaveStatusChange }: Props) {
 	useEffect(() => {
 		onSaveStatusChange?.(saveStatus);
 	}, [saveStatus, onSaveStatusChange]);
+
+	// Dirty = el usuario aportó algo (título o contenido). Se usa desde el
+	// modal de quick note para decidir si la draft creada al abrir debe
+	// borrarse al cerrar sin escribir.
+	useEffect(() => {
+		const dirty = title.trim().length > 0 || blocks !== null;
+		onDirtyChange?.(dirty);
+	}, [title, blocks, onDirtyChange]);
 
 	// Auto-save con debounce
 	useEffect(() => {
