@@ -6,7 +6,6 @@ import { LayoutGrid, ListTodo } from "lucide-react";
 import {
 	abandonSessionAction,
 	completeSessionAction,
-	createNoteInActiveSessionAction,
 	heartbeatAction,
 } from "@/server/solarium/solarium.actions";
 import { useNavigationGuard } from "@/hooks/use-navigation-guard";
@@ -52,7 +51,6 @@ export function ActiveSession({
 }: Props) {
 	const router = useRouter();
 	const [isAbandoning, startAbandonTransition] = useTransition();
-	const [isCreatingNote, startCreateNoteTransition] = useTransition();
 
 	const allNotes = useMemo(() => {
 		const list: { id: string; title: string; content: unknown }[] = [];
@@ -76,11 +74,8 @@ export function ActiveSession({
 		initialRemainingSeconds === 0,
 	);
 
-	// Ref para que el auto-complete solo se dispare una vez aunque el render
-	// vuelva a pasar con remainingSeconds === 0
 	const completionFiredRef = useRef(false);
 
-	// Tick del timer (1s)
 	useEffect(() => {
 		if (isCompleted) return;
 		const id = setInterval(() => {
@@ -89,8 +84,6 @@ export function ActiveSession({
 		return () => clearInterval(id);
 	}, [isCompleted]);
 
-	// Heartbeat cada 45s para que el lazy cleanup no marque la sesión como
-	// ABANDONED. Solo mientras siga ACTIVE (no completada ni abandonando).
 	useEffect(() => {
 		if (isCompleted || isAbandoning) return;
 		const id = setInterval(() => {
@@ -109,7 +102,6 @@ export function ActiveSession({
 	const elapsedDisplay = `${String(elapsedMinutes).padStart(2, "0")}:${String(elapsedSeconds % 60).padStart(2, "0")}`;
 	const progress = (elapsedSeconds / targetSeconds) * 100;
 
-	// Auto-complete cuando el timer llega a 0
 	useEffect(() => {
 		if (remainingSeconds > 0) return;
 		if (completionFiredRef.current) return;
@@ -160,16 +152,6 @@ export function ActiveSession({
 		router.push("/solarium");
 	};
 
-	const handleCreateNote = () => {
-		startCreateNoteTransition(async () => {
-			const created = await createNoteInActiveSessionAction();
-			if (created) {
-				setSelectedNoteId(created.id);
-				router.refresh();
-			}
-		});
-	};
-
 	return (
 		<div className="flex h-screen flex-col bg-background">
 			<ActiveTopbar
@@ -194,8 +176,6 @@ export function ActiveSession({
 							onSelectNote={setSelectedNoteId}
 							openFolders={openFolders}
 							onToggleFolder={toggleFolder}
-							onCreateNote={handleCreateNote}
-							creatingNote={isCreatingNote}
 						/>
 						<ActiveNoteEditor selectedNote={selectedNote} />
 					</>
