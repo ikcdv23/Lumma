@@ -1,5 +1,7 @@
 "use server";
 
+import { AuthError } from "next-auth";
+import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { signIn, signOut } from "@/auth";
 
 /**
@@ -23,9 +25,21 @@ export async function loginAction(_prevState: unknown, formData: FormData) {
 		return { error: "Email y contraseña requeridos" };
 	}
 
-	await signIn("credentials", {
-		email,
-		password,
-		redirectTo: "/home",
-	});
+	try {
+		await signIn("credentials", {
+			email,
+			password,
+			redirectTo: "/home",
+		});
+	} catch (error) {
+		// El redirect de éxito viaja como excepción NEXT_REDIRECT —
+		// hay que dejarlo pasar para que Next complete la navegación.
+		if (isRedirectError(error)) throw error;
+		// Credenciales inválidas u otro AuthError de NextAuth → mensaje al form.
+		if (error instanceof AuthError) {
+			return { error: "Email o contraseña incorrectos" };
+		}
+		// Error desconocido (BD caída, etc.): que burbujee.
+		throw error;
+	}
 }
