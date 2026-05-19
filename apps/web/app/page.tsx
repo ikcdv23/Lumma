@@ -2,6 +2,7 @@ import { LandingNav } from "@/components/landing/nav";
 import { LandingHero } from "@/components/landing/hero";
 import { LandingFeatures } from "@/components/landing/features";
 import { SolariumShowcase } from "@/components/landing/solarium-showcase";
+import { SunSpotlight } from "@/components/landing/sun-spotlight";
 import { LandingCta } from "@/components/landing/cta";
 import { LandingFooter } from "@/components/landing/footer";
 
@@ -19,6 +20,7 @@ export default function LandingPage() {
 				<LandingHero />
 				<LandingFeatures />
 				<SolariumShowcase />
+				<SunSpotlight />
 				<LandingCta />
 			</main>
 			<LandingFooter />
