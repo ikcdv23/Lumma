@@ -31,6 +31,7 @@ import {
 } from "@/server/solarium/solarium.actions";
 import { deleteFolderAction } from "@/server/folder/folder.actions";
 import { deleteNoteAction } from "@/server/note/note.actions";
+import { useConfirm } from "@/components/confirm/confirm-provider";
 
 type FolderMaterial = {
 	id: string;
@@ -63,6 +64,7 @@ export function MaterialSidebar({
 	onToggleFolder,
 }: Props) {
 	const router = useRouter();
+	const confirm = useConfirm();
 	const [isCreatingNote, startCreateNoteTransition] = useTransition();
 	const [isCreatingFolder, startCreateFolderTransition] = useTransition();
 
@@ -101,11 +103,37 @@ export function MaterialSidebar({
 	}
 
 	async function handleDetachFolder(folderId: string) {
+		const folder = folders.find((f) => f.id === folderId);
+		const displayName = folder?.name.trim() || "esta carpeta";
+
+		const ok = await confirm({
+			title: `¿Quitar «${displayName}» de la sesión?`,
+			description:
+				"La carpeta seguirá existiendo en tu workspace. Sólo deja de aparecer en el material de esta sesión.",
+			confirmLabel: "Quitar de la sesión",
+		});
+		if (!ok) return;
+
 		await detachFolderFromActiveSessionAction(folderId);
 		router.refresh();
 	}
 
 	async function handleDeleteFolder(folderId: string) {
+		const folder = folders.find((f) => f.id === folderId);
+		const displayName = folder?.name.trim() || "esta carpeta";
+		const noteCount = folder?.notes.length ?? 0;
+
+		const ok = await confirm({
+			title: `¿Eliminar «${displayName}»?`,
+			description:
+				noteCount === 0
+					? "La carpeta se eliminará para siempre. Esta acción no se puede deshacer."
+					: `Se eliminarán también las ${noteCount} ${noteCount === 1 ? "nota" : "notas"} que contiene. Esta acción no se puede deshacer.`,
+			confirmLabel: "Eliminar",
+			destructive: true,
+		});
+		if (!ok) return;
+
 		await deleteFolderAction(folderId);
 		router.refresh();
 	}
@@ -116,6 +144,20 @@ export function MaterialSidebar({
 	}
 
 	async function handleDeleteNote(noteId: string) {
+		const note =
+			folders.flatMap((f) => f.notes).find((n) => n.id === noteId) ??
+			looseNotes.find((n) => n.id === noteId);
+		const displayTitle = note?.title.trim() || "esta nota";
+
+		const ok = await confirm({
+			title: `¿Eliminar «${displayTitle}»?`,
+			description:
+				"La nota se eliminará para siempre. Esta acción no se puede deshacer.",
+			confirmLabel: "Eliminar",
+			destructive: true,
+		});
+		if (!ok) return;
+
 		await deleteNoteAction(noteId);
 		if (noteId === selectedNoteId) onSelectNote(null);
 		router.refresh();
