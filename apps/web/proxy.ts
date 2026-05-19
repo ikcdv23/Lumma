@@ -17,13 +17,14 @@ export default auth((req) => {
 		logRequest(req);
 
 		const logueado = !!req.auth;
-		const enAuth = req.nextUrl.pathname === "/login" || req.nextUrl.pathname === "/register";
+		const path = req.nextUrl.pathname;
+		const esPublico = path === "/" || path === "/login" || path === "/register";
 
-		if (!logueado && !enAuth) {
+		if (!logueado && !esPublico) {
 			return Response.redirect(new URL("/login", req.nextUrl));
 		}
 
-		if (logueado && enAuth) {
+		if (logueado && esPublico) {
 			return Response.redirect(new URL("/home", req.nextUrl));
 		}
 	} catch (err) {
