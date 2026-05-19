@@ -1,11 +1,8 @@
-import { Trash2 } from "lucide-react";
 import { StarRating } from "./star-rating";
 import { VoteButton } from "./vote-button";
+import { DeleteFeedbackButton } from "./delete-feedback-button";
 import { formatRelative } from "@/lib/format-date";
-import {
-	deleteFeedbackPostAction,
-	toggleFeedbackVoteAction,
-} from "@/server/feedback/feedback.actions";
+import { toggleFeedbackVoteAction } from "@/server/feedback/feedback.actions";
 
 type FeedbackPostCardProps = {
 	post: {
@@ -52,22 +49,7 @@ export function FeedbackPostCard({ post, isAuthor }: FeedbackPostCardProps) {
 					<VoteButton count={post._count.votes} voted={voted} />
 				</form>
 
-				{isAuthor && (
-					<form
-						action={async () => {
-							"use server";
-							await deleteFeedbackPostAction(post.id);
-						}}
-					>
-						<button
-							type="submit"
-							className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive cursor-pointer"
-							aria-label="Eliminar post"
-						>
-							<Trash2 className="size-4" />
-						</button>
-					</form>
-				)}
+				{isAuthor && <DeleteFeedbackButton postId={post.id} />}
 			</footer>
 		</article>
 	);

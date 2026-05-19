@@ -9,6 +9,7 @@ import {
 	ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 import { deleteFolderAction } from "@/server/folder/folder.actions";
+import { useConfirm } from "../confirm/confirm-provider";
 
 type FolderCardProps = {
 	idFolder: string;
@@ -23,6 +24,14 @@ export function FolderCard({
 	noteCount,
 	onEdit,
 }: FolderCardProps) {
+	const confirm = useConfirm();
+
+	const displayName = name.trim() || "esta carpeta";
+	const deleteDescription =
+		noteCount === 0
+			? "La carpeta se eliminará para siempre. Esta acción no se puede deshacer."
+			: `Se eliminarán también las ${noteCount} ${noteCount === 1 ? "nota" : "notas"} que contiene. Esta acción no se puede deshacer.`;
+
 	return (
 		<ContextMenu>
 			<ContextMenuTrigger>
@@ -49,6 +58,13 @@ export function FolderCard({
 				<ContextMenuItem
 					className="text-destructive"
 					onClick={async () => {
+						const ok = await confirm({
+							title: `¿Eliminar «${displayName}»?`,
+							description: deleteDescription,
+							confirmLabel: "Eliminar",
+							destructive: true,
+						});
+						if (!ok) return;
 						await deleteFolderAction(idFolder);
 					}}
 				>

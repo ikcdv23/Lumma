@@ -11,6 +11,7 @@ import {
 import { formatRelative } from "@/lib/format-date";
 import { extractPreview } from "@/lib/note-content";
 import { deleteNoteAction } from "@/server/note/note.actions";
+import { useConfirm } from "../confirm/confirm-provider";
 
 type NoteCardProps = {
 	idNote: string;
@@ -30,6 +31,7 @@ export function NoteCard({
 	onEdit,
 }: NoteCardProps) {
 	const preview = extractPreview(content, 180);
+	const confirm = useConfirm();
 
 	return (
 		<ContextMenu>
@@ -82,11 +84,20 @@ export function NoteCard({
 				<ContextMenuItem
 					className="text-destructive"
 					onClick={async () => {
-						await deleteNoteAction(idNote)
+						const displayTitle = title.trim() || "esta nota";
+						const ok = await confirm({
+							title: `¿Eliminar «${displayTitle}»?`,
+							description:
+								"La nota se eliminará para siempre. Esta acción no se puede deshacer.",
+							confirmLabel: "Eliminar",
+							destructive: true,
+						});
+						if (!ok) return;
+						await deleteNoteAction(idNote);
 					}}
 				>
 					Eliminar
-				</ContextMenuItem> 
+				</ContextMenuItem>
 			</ContextMenuContent>
 		</ContextMenu>
 	);
