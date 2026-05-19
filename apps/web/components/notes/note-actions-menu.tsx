@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { deleteNoteAction } from "@/server/note/note.actions";
 import { MoveToFolderDialog } from "./move-to-folder-dialog";
+import { useConfirm } from "@/components/confirm/confirm-provider";
 
 type Props = {
 	noteId: string;
@@ -30,11 +31,18 @@ export function NoteActionsMenu({
 	triggerVariant = "ghost",
 }: Props) {
 	const router = useRouter();
+	const confirm = useConfirm();
 	const [moveOpen, setMoveOpen] = useState(false);
 	const [isDeleting, startDelete] = useTransition();
 
-	function handleDelete() {
-		const ok = window.confirm("¿Seguro que quieres eliminar esta nota?");
+	async function handleDelete() {
+		const ok = await confirm({
+			title: "¿Eliminar esta nota?",
+			description:
+				"La nota se eliminará para siempre. Esta acción no se puede deshacer.",
+			confirmLabel: "Eliminar",
+			destructive: true,
+		});
 		if (!ok) return;
 
 		startDelete(async () => {

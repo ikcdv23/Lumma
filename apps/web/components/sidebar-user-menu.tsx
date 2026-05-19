@@ -11,6 +11,7 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { signOutAction } from "@/server/auth/auth.actions";
+import { useConfirm } from "@/components/confirm/confirm-provider";
 
 type Props = {
 	displayName: string;
@@ -28,7 +29,18 @@ function getInitials(name: string, email: string) {
 }
 
 export function SidebarUserMenu({ displayName, email, avatarUrl }: Props) {
+	const confirm = useConfirm();
 	const initials = getInitials(displayName, email);
+
+	async function handleSignOut() {
+		const ok = await confirm({
+			title: "¿Cerrar sesión?",
+			description: "Tendrás que volver a entrar para acceder a tus notas.",
+			confirmLabel: "Cerrar sesión",
+		});
+		if (!ok) return;
+		await signOutAction();
+	}
 
 	return (
 		<DropdownMenu>
@@ -79,14 +91,13 @@ export function SidebarUserMenu({ displayName, email, avatarUrl }: Props) {
 
 				<DropdownMenuSeparator />
 
-				<form action={signOutAction}>
-					<DropdownMenuItem asChild variant="destructive">
-						<button type="submit" className="w-full">
-							<LogOut className="size-4" />
-							Cerrar sesión
-						</button>
-					</DropdownMenuItem>
-				</form>
+				<DropdownMenuItem
+					variant="destructive"
+					onClick={handleSignOut}
+				>
+					<LogOut className="size-4" />
+					Cerrar sesión
+				</DropdownMenuItem>
 			</DropdownMenuContent>
 		</DropdownMenu>
 	);

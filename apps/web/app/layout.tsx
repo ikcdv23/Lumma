@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { Geist, Figtree } from "next/font/google";
 import { cn } from "@/lib/utils";
+import { ConfirmProvider } from "@/components/confirm/confirm-provider";
 
 const figtreeHeading = Figtree({subsets:['latin'],variable:'--font-heading'});
 
@@ -32,7 +33,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={cn("font-sans", geist.variable, figtreeHeading.variable)}>
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        {children}
+        <ConfirmProvider>{children}</ConfirmProvider>
       </body>
     </html>
   );
