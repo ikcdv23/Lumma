@@ -48,6 +48,7 @@ export async function completeSessionAction(
 	sessionId: string,
 	studyMinutes: number,
 	breakMinutes: number,
+	reflection?: string | null,
 ) {
 	const userId = await getAuthedUserId();
 	if (!userId) return null;
@@ -57,6 +58,7 @@ export async function completeSessionAction(
 		sessionId,
 		studyMinutes,
 		breakMinutes,
+		reflection,
 	);
 
 	revalidatePath("/solarium");

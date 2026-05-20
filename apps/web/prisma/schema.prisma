@@ -145,6 +145,9 @@ model StudySession {
   studyMinutes  Int    @default(0)
   breakMinutes  Int    @default(0)
 
+  /// Reflexión opcional escrita al cerrar la jornada (Newport "shutdown ritual").
+  reflection String?
+
   status StudySessionStatus @default(ACTIVE)
 
   notesTouched String[]

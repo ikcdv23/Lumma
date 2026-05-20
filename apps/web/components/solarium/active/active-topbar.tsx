@@ -24,6 +24,8 @@ export function ActiveTopbar({
 	elapsedMinutes,
 	isCompleted,
 	onExit,
+	inExtraTime = false,
+	onCloseDay,
 }: {
 	title: string;
 	activeTab: Tab;
@@ -33,6 +35,8 @@ export function ActiveTopbar({
 	elapsedMinutes: number;
 	isCompleted: boolean;
 	onExit: () => void;
+	inExtraTime?: boolean;
+	onCloseDay?: () => void;
 }) {
 	const [confirmOpen, setConfirmOpen] = useState(false);
 
@@ -45,6 +49,11 @@ export function ActiveTopbar({
 					<span className="ml-1 inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-700">
 						<Check className="size-3" />
 						Completada
+					</span>
+				)}
+				{inExtraTime && !isCompleted && (
+					<span className="ml-1 inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-700">
+						✨ Tiempo extra
 					</span>
 				)}
 			</div>
@@ -81,6 +90,25 @@ export function ActiveTopbar({
 					<Check className="size-4" />
 					Salir
 				</button>
+			) : inExtraTime ? (
+				<div className="flex items-center gap-2">
+					<button
+						type="button"
+						onClick={() => setConfirmOpen(true)}
+						className="flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:border-red-400/60 hover:text-foreground"
+					>
+						<X className="size-4" />
+						Abandonar
+					</button>
+					<button
+						type="button"
+						onClick={onCloseDay}
+						className="flex items-center gap-1.5 rounded-md bg-amber-500 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-amber-600"
+					>
+						<Check className="size-4" />
+						Cerrar la jornada
+					</button>
+				</div>
 			) : (
 				<button
 					type="button"

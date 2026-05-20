@@ -69,10 +69,17 @@ export function markStatus(
 	status: "ABANDONED" | "COMPLETED",
 	studyMinutes: number,
 	breakMinutes: number,
+	reflection?: string | null,
 ) {
 	return prisma.studySession.updateMany({
 		where: { id: sessionId, userId, status: "ACTIVE" },
-		data: { status, endedAt: new Date(), studyMinutes, breakMinutes },
+		data: {
+			status,
+			endedAt: new Date(),
+			studyMinutes,
+			breakMinutes,
+			...(reflection !== undefined && { reflection }),
+		},
 	});
 }
 

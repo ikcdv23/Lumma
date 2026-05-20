@@ -122,6 +122,7 @@ export function completeSession(
 	sessionId: string,
 	studyMinutes: number,
 	breakMinutes: number,
+	reflection?: string | null,
 ) {
 	return solariumRepository.markStatus(
 		sessionId,
@@ -129,6 +130,7 @@ export function completeSession(
 		"COMPLETED",
 		studyMinutes,
 		breakMinutes,
+		reflection,
 	);
 }
 

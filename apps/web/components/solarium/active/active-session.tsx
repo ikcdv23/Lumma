@@ -15,6 +15,7 @@ import { FloatingTimer } from "./floating-timer";
 import { MaterialSidebar } from "./material-sidebar";
 import { ActiveNoteEditor } from "./active-note-editor";
 import { AbandonModal } from "./abandon-modal";
+import { CompletionModal } from "./completion-modal";
 
 type FolderMaterial = {
 	id: string;
@@ -74,12 +75,15 @@ export function ActiveSession({
 		initialRemainingSeconds === 0,
 	);
 
-	const completionFiredRef = useRef(false);
+	// Modal de cierre + pending state
+	const [completionOpen, setCompletionOpen] = useState(false);
+	const [isCompleting, startCompleteTransition] = useTransition();
 
+	// Tick: cuenta hacia abajo hasta 0, después cuenta hacia arriba (tiempo extra)
 	useEffect(() => {
 		if (isCompleted) return;
 		const id = setInterval(() => {
-			setRemainingSeconds((s) => Math.max(0, s - 1));
+			setRemainingSeconds((s) => s - 1);
 		}, 1000);
 		return () => clearInterval(id);
 	}, [isCompleted]);
@@ -92,25 +96,36 @@ export function ActiveSession({
 		return () => clearInterval(id);
 	}, [sessionId, isCompleted, isAbandoning]);
 
-	const minutes = Math.floor(remainingSeconds / 60);
-	const seconds = remainingSeconds % 60;
-	const timerDisplay = `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
-
 	const targetSeconds = targetMinutes * 60;
-	const elapsedSeconds = targetSeconds - remainingSeconds;
+	// inExtraTime: el timer pasó 0 pero la sesión sigue activa
+	const inExtraTime = remainingSeconds <= 0 && !isCompleted;
+	const extraSeconds = inExtraTime ? -remainingSeconds : 0;
+
+	// Display: cuando estamos en extra, mostramos "+MM:SS" en vez del countdown
+	const displaySeconds = inExtraTime ? extraSeconds : remainingSeconds;
+	const displayMinutesPart = Math.floor(Math.abs(displaySeconds) / 60);
+	const displaySecondsPart = Math.abs(displaySeconds) % 60;
+	const timerDisplay = inExtraTime
+		? `+${String(displayMinutesPart).padStart(2, "0")}:${String(displaySecondsPart).padStart(2, "0")}`
+		: `${String(displayMinutesPart).padStart(2, "0")}:${String(displaySecondsPart).padStart(2, "0")}`;
+
+	// elapsedSeconds: tiempo total estudiado (target alcanzado + extra si lo hay)
+	const elapsedSeconds = inExtraTime
+		? targetSeconds + extraSeconds
+		: targetSeconds - remainingSeconds;
 	const elapsedMinutes = Math.floor(elapsedSeconds / 60);
-	const elapsedDisplay = `${String(elapsedMinutes).padStart(2, "0")}:${String(elapsedSeconds % 60).padStart(2, "0")}`;
-	const progress = (elapsedSeconds / targetSeconds) * 100;
+	const elapsedDisplay = `${String(Math.floor(elapsedSeconds / 60)).padStart(2, "0")}:${String(elapsedSeconds % 60).padStart(2, "0")}`;
+	const extraMinutes = Math.floor(extraSeconds / 60);
+	const progress = inExtraTime ? 100 : (elapsedSeconds / targetSeconds) * 100;
 
+	// Title de la pestaña: cuando hay extra, te enteras aunque estés en otra tab
 	useEffect(() => {
-		if (remainingSeconds > 0) return;
-		if (completionFiredRef.current) return;
-		completionFiredRef.current = true;
-
-		completeSessionAction(sessionId, targetMinutes, 0).then(() => {
-			setIsCompleted(true);
-		});
-	}, [remainingSeconds, sessionId, targetMinutes]);
+		const original = document.title;
+		if (inExtraTime) document.title = "✨ Tu sol se ha puesto · Lumma";
+		return () => {
+			document.title = original;
+		};
+	}, [inExtraTime]);
 
 	const elapsedMinutesRef = useRef(elapsedMinutes);
 	useEffect(() => {
@@ -152,6 +167,22 @@ export function ActiveSession({
 		router.push("/solarium");
 	};
 
+	const handleOpenCloseDay = () => {
+		setCompletionOpen(true);
+	};
+
+	const handleConfirmCloseDay = (reflection: string | null) => {
+		startCompleteTransition(async () => {
+			await completeSessionAction(
+				sessionId,
+				elapsedMinutes,
+				0,
+				reflection,
+			);
+			router.push("/solarium");
+		});
+	};
+
 	return (
 		<div className="flex h-screen flex-col bg-background">
 			<ActiveTopbar
@@ -163,6 +194,8 @@ export function ActiveSession({
 				elapsedMinutes={elapsedMinutes}
 				isCompleted={isCompleted}
 				onExit={handleExit}
+				inExtraTime={inExtraTime}
+				onCloseDay={handleOpenCloseDay}
 			/>
 
 			<main className="flex flex-1 overflow-hidden">
@@ -194,6 +227,7 @@ export function ActiveSession({
 				elapsedDisplay={elapsedDisplay}
 				progress={progress}
 				isCompleted={isCompleted}
+				inExtraTime={inExtraTime}
 			/>
 			<AbandonModal
 				open={pendingHref !== null}
@@ -201,6 +235,14 @@ export function ActiveSession({
 				elapsedMinutes={elapsedMinutes}
 				onCancel={cancelExit}
 				onConfirm={confirmExit}
+			/>
+			<CompletionModal
+				open={completionOpen}
+				onOpenChange={setCompletionOpen}
+				targetMinutes={targetMinutes}
+				extraMinutes={extraMinutes}
+				pending={isCompleting}
+				onConfirm={handleConfirmCloseDay}
 			/>
 		</div>
 	);

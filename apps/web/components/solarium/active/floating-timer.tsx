@@ -12,6 +12,7 @@ export function FloatingTimer({
 	elapsedDisplay,
 	progress,
 	isCompleted,
+	inExtraTime = false,
 }: {
 	expanded: boolean;
 	onToggle: () => void;
@@ -20,6 +21,7 @@ export function FloatingTimer({
 	elapsedDisplay: string;
 	progress: number;
 	isCompleted: boolean;
+	inExtraTime?: boolean;
 }) {
 	return (
 		<motion.div
@@ -39,12 +41,14 @@ export function FloatingTimer({
 					elapsedDisplay={elapsedDisplay}
 					progress={progress}
 					isCompleted={isCompleted}
+					inExtraTime={inExtraTime}
 				/>
 			) : (
 				<CollapsedTimer
 					onToggle={onToggle}
 					timerDisplay={timerDisplay}
 					isCompleted={isCompleted}
+					inExtraTime={inExtraTime}
 				/>
 			)}
 		</motion.div>
@@ -55,10 +59,12 @@ function CollapsedTimer({
 	onToggle,
 	timerDisplay,
 	isCompleted,
+	inExtraTime,
 }: {
 	onToggle: () => void;
 	timerDisplay: string;
 	isCompleted: boolean;
+	inExtraTime: boolean;
 }) {
 	return (
 		<motion.button
@@ -67,7 +73,7 @@ function CollapsedTimer({
 			layout
 			transition={TRANSITIONS.spring}
 			className={
-				isCompleted
+				isCompleted || inExtraTime
 					? "flex items-center gap-2 rounded-full border border-amber-400 bg-amber-100 px-4 py-2 shadow-sm transition-colors hover:bg-amber-200"
 					: "flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-4 py-2 shadow-sm transition-colors hover:bg-amber-100"
 			}
@@ -82,11 +88,7 @@ function CollapsedTimer({
 			</motion.div>
 			<motion.span
 				layoutId="timer-label"
-				className={
-					isCompleted
-						? "text-sm font-semibold text-amber-700"
-						: "text-sm font-semibold text-amber-700 tabular-nums"
-				}
+				className="text-sm font-semibold text-amber-700 tabular-nums"
 			>
 				{isCompleted ? "Completada" : timerDisplay}
 			</motion.span>
@@ -101,6 +103,7 @@ function ExpandedTimer({
 	elapsedDisplay,
 	progress,
 	isCompleted,
+	inExtraTime,
 }: {
 	onToggle: () => void;
 	timerDisplay: string;
@@ -108,6 +111,7 @@ function ExpandedTimer({
 	elapsedDisplay: string;
 	progress: number;
 	isCompleted: boolean;
+	inExtraTime: boolean;
 }) {
 	return (
 		<>
@@ -120,7 +124,11 @@ function ExpandedTimer({
 						layoutId="timer-label"
 						className="text-xs font-medium text-muted-foreground uppercase tracking-wider"
 					>
-						{isCompleted ? "Completada" : "Pomodoro"}
+						{isCompleted
+							? "Completada"
+							: inExtraTime
+								? "Tiempo extra"
+								: "Pomodoro"}
 					</motion.span>
 				</div>
 				<button
@@ -160,11 +168,17 @@ function ExpandedTimer({
 						transition={TRANSITIONS.soft}
 						className="text-center"
 					>
-						<div className="text-5xl font-bold tabular-nums">
+						<div
+							className={`text-5xl font-bold tabular-nums ${
+								inExtraTime ? "text-amber-600" : ""
+							}`}
+						>
 							{timerDisplay}
 						</div>
 						<div className="mt-1 text-xs text-muted-foreground">
-							{targetMinutes} min · {elapsedDisplay} transcurridos
+							{inExtraTime
+								? `${targetMinutes} min cumplidos · seguiremos sumando`
+								: `${targetMinutes} min · ${elapsedDisplay} transcurridos`}
 						</div>
 					</motion.div>
 				)}
