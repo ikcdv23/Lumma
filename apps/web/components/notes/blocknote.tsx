@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import {
 	BlockNoteSchema,
 	createCodeBlockSpec,
@@ -74,6 +75,26 @@ export function NoteEditor({
 		schema,
 		initialContent: initial,
 	});
+
+	useEffect(() => {
+		const dom = editor.domElement;
+		if (!dom) return;
+
+		const handlePaste = async (e: ClipboardEvent) => {
+			const text = e.clipboardData?.getData("text/plain");
+			if (!text) return;
+
+			const looksLikeMarkdown = /(^#{1,6}\s)|(\n\n)|(```)|(\*\*)|(^\s*[-*]\s)|(^\s*\d+\.\s)|(\|.*\|)/m.test(text);
+			if (!looksLikeMarkdown) return;
+
+			e.preventDefault();
+			const blocks = await editor.tryParseMarkdownToBlocks(text);
+			editor.replaceBlocks([editor.getTextCursorPosition().block.id], blocks);
+		};
+
+		dom.addEventListener("paste", handlePaste);
+		return () => dom.removeEventListener("paste", handlePaste);
+	}, [editor]);
 
 	return (
 		<BlockNoteView
