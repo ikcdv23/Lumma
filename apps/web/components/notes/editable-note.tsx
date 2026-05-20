@@ -70,11 +70,16 @@ export function EditableNote({
 
 		setSaveStatus("saving");
 		const timer = setTimeout(async () => {
-			await updateNoteAction(
-				note.id,
-				blocks ? { title, content: blocks } : { title },
-			);
-			setSaveStatus("saved");
+			try {
+				await updateNoteAction(
+					note.id,
+					blocks ? { title, content: blocks } : { title },
+				);
+				setSaveStatus("saved");
+			} catch (err) {
+				console.error("Auto-save failed", err);
+				setSaveStatus("idle");
+			}
 		}, 500);
 
 		return () => clearTimeout(timer);
