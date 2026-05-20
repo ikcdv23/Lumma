@@ -79,7 +79,14 @@ export function updateNote(
 	noteId: string,
 	data: { title?: string; content?: unknown },
 ) {
-	return noteRepository.update(noteId, userId, data);
+	// Prisma JSON rechaza `undefined` dentro de arrays (ej. BlockNote mete
+	// `undefined` en `columnWidths` de tablas). Roundtrip a JSON los convierte
+	// en `null`, que sí es válido.
+	const sanitized =
+		data.content !== undefined
+			? { ...data, content: JSON.parse(JSON.stringify(data.content)) }
+			: data;
+	return noteRepository.update(noteId, userId, sanitized);
 }
 
 export async function moveNoteToFolder(
