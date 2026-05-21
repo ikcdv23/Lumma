@@ -81,15 +81,37 @@ export function NoteEditor({
 		if (!dom) return;
 
 		const handlePaste = async (e: ClipboardEvent) => {
+			const html = e.clipboardData?.getData("text/html");
 			const text = e.clipboardData?.getData("text/plain");
-			if (!text) return;
 
-			const looksLikeMarkdown = /(^#{1,6}\s)|(\n\n)|(```)|(\*\*)|(^\s*[-*]\s)|(^\s*\d+\.\s)|(\|.*\|)/m.test(text);
-			if (!looksLikeMarkdown) return;
+			const hasHtml = !!(html && html.trim().length > 0);
+			const looksLikeMarkdown = text
+				? /(^#{1,6}\s)|(\n\n)|(```)|(\*\*)|(^\s*[-*]\s)|(^\s*\d+\.\s)|(\|.*\|)/m.test(
+						text,
+					)
+				: false;
 
+			// Decisión síncrona: si vamos a tomar control, preventDefault YA,
+			// antes de cualquier await. Si no, dejamos que BlockNote pegue nativo.
+			if (!hasHtml && !looksLikeMarkdown) return;
 			e.preventDefault();
-			const blocks = await editor.tryParseMarkdownToBlocks(text);
-			editor.replaceBlocks([editor.getTextCursorPosition().block.id], blocks);
+
+			const blocks: PartialBlock[] = hasHtml
+				? await editor.tryParseHTMLToBlocks(html!)
+				: await editor.tryParseMarkdownToBlocks(text!);
+
+			if (!blocks || blocks.length === 0) return;
+
+			const current = editor.getTextCursorPosition().block;
+			const isEmpty =
+				!current.content ||
+				(Array.isArray(current.content) && current.content.length === 0);
+
+			if (isEmpty) {
+				editor.replaceBlocks([current.id], blocks);
+			} else {
+				editor.insertBlocks(blocks, current, "after");
+			}
 		};
 
 		dom.addEventListener("paste", handlePaste);
