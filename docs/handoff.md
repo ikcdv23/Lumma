@@ -1,7 +1,15 @@
-# Handoff — actualizado 2026-05-15
+# Handoff — actualizado 2026-05-21
 
 > Documento para retomar el trabajo en otra máquina o tras un break.
 > Léelo **primero**. Para arquitectura detallada: [docs/concepts/arquitectura.md](concepts/arquitectura.md).
+
+---
+
+## ⏸ Estado: PAUSADO (2026-05-21)
+
+Javier ha decidido aparcar Lumma "por terminado de momento" y pasar a otro proyecto. La app está **en producción, funcional y estable**. Lo último mergeado a `dev` está en Vercel sin issues abiertos críticos. No es un abandono — es una pausa con cierre limpio.
+
+**Si vuelves:** lee la sección [🐛 Bugs conocidos al pausar](#-bugs-conocidos-al-pausar) antes de tocar nada. Luego mira [Donde retomar](#donde-retomar-siguiente-sesión) — el plan original sigue válido.
 
 ---
 
@@ -12,22 +20,35 @@
 | Aspecto | Estado |
 |---------|--------|
 | Producto en prod | ✅ Solarium MVP shipped (2026-05-14) |
-| Arquitectura server | ✅ 3 capas universales en todo el código (refactor cerrado 2026-05-15) |
+| Sesiones con cierre + reflexión | ✅ Shipped 2026-05-19 (extra time + reflection capture al estilo Newport) |
+| Landing page Slow Productivity | ✅ Shipped (Cal Newport como target tribu) |
+| Confirmaciones para acciones destructivas | ✅ ConfirmProvider + useConfirm cross-app |
+| Arquitectura server | ✅ 3 capas universales en todo el código |
 | Animaciones / loaders | ✅ Infraestructura completa (PR #4) |
 | Branching | `dev` actúa como prod (no hay `main`). **Pendiente** crear separación staging/prod |
 | Usuarios reales | Recién abierto. Métricas, rate limiting, error monitoring → todavía no |
 
+---
+
+## 🐛 Bugs conocidos al pausar
+
+1. **Paste handler duplica contenido** ([blocknote.tsx:79-119](../apps/web/components/notes/blocknote.tsx#L79-L119)) — Intento de mejorar el paste de Claude/Notion/Docs prefiriendo HTML sobre markdown. Pega el contenido **dos veces**: una con formato (mi handler) y otra plana (BlockNote nativo). Causa: `preventDefault` no llega a impedir el paste nativo de ProseMirror aunque se llame síncronamente. Si retomas, lo más simple es **revertir esa función entera al estado previo** (solo markdown via `text/plain`, sin la rama HTML) o intentar registrar como ProseMirror plugin en lugar de DOM event listener.
+2. **`bodySizeLimit: "20mb"` y `proxyClientMaxBodySize: "20mb"`** en [next.config.js](../apps/web/next.config.js) — Subidos cuando se diagnosticó mal el bug de guardado (era PrismaClientValidationError por `undefined` en `columnWidths` de tablas, no body limit). Quedaron así pero **5mb era suficiente**. Limpieza opcional.
+
 ### Lo que funciona end-to-end
 
-- Auth (Google OAuth + Credentials con bcrypt)
+- Auth (Google OAuth + Credentials con bcrypt + error handling visible al user)
+- `/` — Landing page Slow Productivity (Cal Newport / shutdown ritual como ángulo)
 - `/home` — FastNotes (autosave), pills de carpetas + Inbox, notas recientes
-- `/inbox`, `/folders`, `/folders/[id]`, `/notes/[noteId]` — CRUD completo, editor BlockNote con autosave
+- `/inbox`, `/folders`, `/folders/[id]`, `/notes/[noteId]` — CRUD completo, editor BlockNote con autosave (con `JSON.parse(JSON.stringify(...))` sanitize antes de Prisma update — sin él, las tablas con `undefined` en `columnWidths` rompen el save)
 - `/profile` — avatar, nombre, contraseña, eliminar cuenta
 - `/feedback` — foro de comunidad (posts, votos, estrellas)
 - `/solarium` — hub (recent + streak + TODAY_MINUTES reales)
 - `/solarium/new` — configurador multi-material (carpetas + notas + duración)
-- `/active` — workspace de sesión: tabs (Notas / Tareas placeholder / Tablero placeholder), sub-sidebar de material, BlockNote inline, timer flotante con expansión fluida, AlertDialog de abandono, botón "Nueva nota en sesión", auto-complete cuando timer = 0
+- `/active` — workspace de sesión: tabs (Notas / Tareas placeholder / Tablero placeholder), sub-sidebar de material con CRUD de carpetas y notas, BlockNote inline, timer flotante con expansión fluida, navigation guard (Link clicks + popstate + beforeunload), AlertDialog de abandono, **tiempo extra después del 0** (count-up + título de pestaña "✨ Tu sol se ha puesto"), **modal de cierre con reflexión opcional** (Newport "shutdown ritual" → campo `reflection` en `StudySession`)
+- ConfirmProvider + `useConfirm()` para todas las acciones destructivas (sign out, eliminar nota/carpeta/cuenta, desvincular folder de sesión, etc.)
 - Sidebar pulido con user dropdown en footer
+- Username consistente entre home y sidebar (ambos leen fresh de BD, no de JWT)
 - Aviso "beta" visible en hub de Solarium
 
 ---
@@ -89,18 +110,18 @@ Antes de seguir con features nuevas. Estás abriendo a users reales y faltan def
 
 ### 📦 Bloque 1 — Features pedidas explícitamente
 
-1. **Tiempo extra estilo Forest**: cuando el timer llega a 0 y se auto-completa, ofrecer "+10 min" / "+25 min" / "Salir ya". Mantiene flow mental. Sin schema nuevo (reusar `targetMinutes` como "lo prometido" y `studyMinutes` como "lo real" — el segundo puede superar al primero). Opcionalmente `extensions: Int @default(0)` para estadística.
-2. **Crear carpetas en sesión activa**: desde sub-sidebar, botón "Nueva carpeta" análogo al "Nueva nota". Action `createFolderInActiveSessionAction()` siguiendo el patrón de `createNoteInActiveSessionAction` (que ya está hecho y limpio tras el refactor — usar como referencia).
+1. ~~**Tiempo extra estilo Forest**~~ ✅ Hecho 2026-05-19. Tras 0:00 cuenta hacia arriba con badge "✨ Tiempo extra" y botón "Cerrar la jornada" que abre modal con reflexión opcional.
+2. ~~**Crear carpetas en sesión activa**~~ ✅ Hecho. `createFolderInActiveSessionAction` + integración en MaterialSidebar.
 3. **Drag & drop notas → carpetas**: dentro de `/active`. Librería sugerida: `@dnd-kit/core`. `useDraggable` en notas, `useDroppable` en carpetas. Reutilizar `moveNoteToFolderAction` que ya existe en `note.actions.ts`.
+4. **Arreglar paste duplicado** — ver [🐛 Bugs conocidos al pausar](#-bugs-conocidos-al-pausar). Opciones: revertir el handler o portar la lógica a un ProseMirror plugin oficial de BlockNote (más correcto pero más invasivo).
 
 ### 🌒 Bloque 2 — Cerrar Fase 5 de Solarium
 
 1. **Heartbeat real**: `useEffect` en `ActiveSession` con setInterval cada 45s → `heartbeatAction(sessionId)`. Sin esto, lazy cleanup marca abandoned a los 2 min sin actividad.
-2. **`beforeunload` + `sendBeacon`** para cerrar pestaña/refresh → dispara abandono con minutos transcurridos.
-3. **Navigation guard global**: el AlertDialog del botón "Abandonar" ya funciona. Falta interceptar clicks en `<Link>` externos a `/active` para mostrarlo también.
-4. **Botón Completar manual**: para el caso "ya está, completo antes de tiempo".
-5. **Persistir tab activa**: con `searchParams` (`?tab=notas`) o localStorage. Decisión pendiente.
-6. **Borrar `/mockup`** cuando todo lo anterior cierre.
+2. ~~**`beforeunload` + `sendBeacon`**~~ y ~~**Navigation guard global**~~ ✅ Hechos. `useNavigationGuard` intercepta Link clicks (capture phase), popstate (history trap), beforeunload + pagehide + bfcache reload.
+3. **Botón Completar manual**: para el caso "ya está, completo antes de tiempo". Hoy solo se puede via tiempo extra → "Cerrar la jornada".
+4. **Persistir tab activa**: con `searchParams` (`?tab=notas`) o localStorage. Decisión pendiente.
+5. **Borrar `/mockup`** cuando todo lo anterior cierre.
 
 ### 🤖 Bloque 3 — AI agent (futuro)
 
