@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import { createSessionAction } from "@/server/solarium/solarium.actions";
 import { Spinner } from "@/components/loaders";
 import { FolderContentsModal } from "./folder-contents-modal";
@@ -28,6 +29,11 @@ type NoteItem = {
 };
 
 const DURATIONS = [25, 50, 90] as const;
+// En dev permitimos 1 minuto para iterar sobre la pantalla de fin de sesión
+// sin esperar 5+ min. Next.js sustituye NODE_ENV en build time, así que en
+// producción esta línea es `const MIN_CUSTOM_MINUTES = 5;` literal.
+const MIN_CUSTOM_MINUTES = process.env.NODE_ENV === "development" ? 1 : 5;
+const MAX_CUSTOM_MINUTES = 240;
 
 export function SessionConfig({
 	folders,
@@ -42,7 +48,22 @@ export function SessionConfig({
 	const [excludedNoteIds, setExcludedNoteIds] = useState<Set<string>>(new Set());
 	const [modalFolderId, setModalFolderId] = useState<string | null>(null);
 	const [duration, setDuration] = useState<number>(50);
+	const [isCustomDuration, setIsCustomDuration] = useState(false);
+	const [customDurationDraft, setCustomDurationDraft] = useState<string>("60");
 	const [isPending, startTransition] = useTransition();
+
+	function clampCustom(value: number) {
+		return Math.max(
+			MIN_CUSTOM_MINUTES,
+			Math.min(MAX_CUSTOM_MINUTES, Math.round(value)),
+		);
+	}
+
+	// El número que viaja al server. Si está en modo custom usa el draft
+	// parseado y clampado; si no, usa el preset seleccionado.
+	const effectiveDuration = isCustomDuration
+		? clampCustom(Number(customDurationDraft) || MIN_CUSTOM_MINUTES)
+		: duration;
 
 	// Notas implícitas: notas en carpetas seleccionadas que NO están excluidas
 	const implicitNoteIds = useMemo(() => {
@@ -109,11 +130,27 @@ export function SessionConfig({
 				title: null,
 				folderIds: Array.from(selectedFolders),
 				noteIds: Array.from(finalNoteIds),
-				targetMinutes: duration,
+				targetMinutes: effectiveDuration,
 			});
-			if (result) {
-				router.push("/active");
+
+			if (!result.ok) {
+				if (result.reason === "invalid-material") {
+					toast.error("Material no válido", {
+						description: "Alguna carpeta o nota ya no existe. Recarga la página.",
+					});
+				} else {
+					toast.error("No se pudo iniciar la sesión");
+				}
+				return;
 			}
+
+			if (!result.created) {
+				toast.info("Ya tenías una sesión activa", {
+					description: "Te llevamos a la sesión en curso. La configuración nueva no se aplicó.",
+				});
+			}
+
+			router.push("/active");
 		});
 	};
 
@@ -282,12 +319,15 @@ export function SessionConfig({
 				</h2>
 				<div className="flex gap-3">
 					{DURATIONS.map((d) => {
-						const isSelected = duration === d;
+						const isSelected = !isCustomDuration && duration === d;
 						return (
 							<button
 								key={d}
 								type="button"
-								onClick={() => setDuration(d)}
+								onClick={() => {
+									setDuration(d);
+									setIsCustomDuration(false);
+								}}
 								className={cn(
 									"flex-1 rounded-xl border p-5 text-center transition-colors",
 									isSelected
@@ -300,7 +340,61 @@ export function SessionConfig({
 							</button>
 						);
 					})}
+
+					{/* Cuarta tarjeta = entrada custom. Al activarla el input se hace
+					    visible debajo. Sin entrar al input, muestra "Otro" como hint. */}
+					<button
+						type="button"
+						onClick={() => setIsCustomDuration(true)}
+						className={cn(
+							"flex-1 rounded-xl border p-5 text-center transition-colors",
+							isCustomDuration
+								? "border-amber-400 bg-amber-50/50 ring-1 ring-amber-300"
+								: "hover:border-amber-400/60",
+						)}
+					>
+						<div className="text-3xl font-bold tabular-nums text-muted-foreground">
+							{isCustomDuration ? effectiveDuration : "···"}
+						</div>
+						<div className="text-xs text-muted-foreground mt-0.5">
+							{isCustomDuration ? "min" : "otro"}
+						</div>
+					</button>
 				</div>
+
+				{isCustomDuration && (
+					<div className="flex items-center gap-3 rounded-lg border bg-amber-50/30 p-3">
+						<label
+							htmlFor="custom-duration"
+							className="text-sm font-medium text-foreground"
+						>
+							Minutos:
+						</label>
+						<input
+							id="custom-duration"
+							type="number"
+							min={MIN_CUSTOM_MINUTES}
+							max={MAX_CUSTOM_MINUTES}
+							step={1}
+							value={customDurationDraft}
+							onChange={(e) => setCustomDurationDraft(e.target.value)}
+							onBlur={() => {
+								// Al perder foco, normalizamos lo que esté en el input a un
+								// valor válido para que el usuario vea exactamente qué se
+								// va a guardar.
+								const parsed = Number(customDurationDraft);
+								const clamped = Number.isFinite(parsed)
+									? clampCustom(parsed)
+									: MIN_CUSTOM_MINUTES;
+								setCustomDurationDraft(String(clamped));
+							}}
+							className="w-24 rounded-md border bg-background px-3 py-1.5 text-sm tabular-nums outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
+						/>
+						<p className="text-xs text-muted-foreground">
+							Entre {MIN_CUSTOM_MINUTES} y {MAX_CUSTOM_MINUTES} minutos.
+						</p>
+					</div>
+				)}
 			</section>
 
 			{/* Submit */}

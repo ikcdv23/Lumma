@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { requireAuthedUserId } from "@/lib/auth-helper";
 import * as solariumService from "@/server/solarium/solarium.service";
+import * as kanbanService from "@/server/kanban/kanban.service";
 import { ActiveSession } from "@/components/solarium/active/active-session";
 
 
@@ -14,6 +15,10 @@ export default async function ActiveSessionPage() {
 
 	const material = await solariumService.getMaterialByUser(userId);
 	if (!material) redirect("/solarium");
+
+	// Las cards viven a nivel sesión: vacío al empezar una nueva sesión, lleno
+	// si volvemos a la activa después de un refresh.
+	const kanbanCards = await kanbanService.listCardsBySession(material.id, userId);
 
 	// Resolver folders + notas sueltas a partir del material de la sesión
 	const sessionNoteIds = new Set(material.notes.map((n) => n.id));
@@ -47,6 +52,7 @@ export default async function ActiveSessionPage() {
 			initialRemainingSeconds={initialRemainingSeconds}
 			folders={folders}
 			looseNotes={looseNotes}
+			kanbanCards={kanbanCards}
 		/>
 	);
 }

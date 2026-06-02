@@ -43,6 +43,17 @@ export async function updateUserName(userId: string, name: string) {
 }
 
 /**
+ * Versión ligera del perfil para sidebar / topbar / saludo del home.
+ * Una sola query (sin counts), datos frescos de BD para no servir lo cacheado
+ * en el JWT cuando el user acaba de cambiar nombre o avatar.
+ */
+export async function getDisplayInfo(userId: string) {
+	const user = await userRepository.findById(userId);
+	if (!user) return null;
+	return { name: user.name, email: user.email, image: user.image };
+}
+
+/**
  * Result discriminado para que la action sepa qué responder al cliente
  * sin ambigüedad.
  */

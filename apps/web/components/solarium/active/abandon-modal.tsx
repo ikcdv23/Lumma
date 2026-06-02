@@ -12,6 +12,14 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Spinner } from "@/components/loaders";
 
+/**
+ * Modal especializado para abandono de sesión Solarium. Existe aparte del
+ * ConfirmProvider porque el flujo de abandono necesita mantener el modal
+ * abierto durante la llamada al servidor mostrando spinner — el
+ * ConfirmProvider genérico cierra inmediatamente al confirmar y no encaja.
+ *
+ * Estética alineada con ConfirmProvider via tokens `bg-destructive`.
+ */
 type Props = {
 	open: boolean;
 	onConfirm: () => void;
@@ -28,7 +36,7 @@ export function AbandonModal({
 	elapsedMinutes = 0,
 }: Props) {
 	return (
-    <AlertDialog
+		<AlertDialog
 			open={open}
 			onOpenChange={(o) => !o && !pending && onCancel()}
 		>
@@ -47,7 +55,7 @@ export function AbandonModal({
 					<AlertDialogAction
 						onClick={onConfirm}
 						disabled={pending}
-						className="bg-red-500 text-white hover:bg-red-600"
+						className="bg-destructive text-white hover:bg-destructive/90"
 					>
 						{pending ? (
 							<>

@@ -8,6 +8,7 @@ import {
 	ContextMenuItem,
 	ContextMenuTrigger,
 } from "@/components/ui/context-menu";
+import { toast } from "sonner";
 import { deleteFolderAction } from "@/server/folder/folder.actions";
 import { useConfirm } from "../confirm/confirm-provider";
 
@@ -65,7 +66,13 @@ export function FolderCard({
 							destructive: true,
 						});
 						if (!ok) return;
-						await deleteFolderAction(idFolder);
+						try {
+							await deleteFolderAction(idFolder);
+							toast.success("Carpeta eliminada");
+						} catch (err) {
+							console.error("deleteFolderAction failed", err);
+							toast.error("No se pudo eliminar la carpeta");
+						}
 					}}
 				>
 					Eliminar

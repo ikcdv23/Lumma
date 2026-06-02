@@ -1,8 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { signOut } from "@/auth";
 import { getAuthedUserId } from "@/lib/auth-helper";
 import {
 	deleteAccountSchema,
@@ -81,7 +81,24 @@ export async function deleteAccountAction(formData: FormData) {
 	const result = await userService.deleteAccount(userId, parsed.data.password);
 	if (!result.ok) return { error: result.error };
 
-	await signOut({ redirectTo: "/login" });
+	// Limpieza explícita de cookies en vez de delegar en signOut: el user ya
+	// no existe en BD, y signOut() reentra al callback de auth que ve un user
+	// inexistente y devuelve null, lo que a veces dejaba la cookie a medias.
+	// Borrar a mano + redirect es el camino fiable.
+	const cookieStore = await cookies();
+	const authCookies = [
+		"authjs.session-token",
+		"authjs.csrf-token",
+		"authjs.callback-url",
+		"__Secure-authjs.session-token",
+		"__Secure-authjs.csrf-token",
+		"__Secure-authjs.callback-url",
+	];
+	for (const name of authCookies) {
+		cookieStore.delete(name);
+	}
+
+	redirect("/login");
 }
 
 /**

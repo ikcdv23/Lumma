@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import {
 	createFolderAction,
 	updateFolderAction,
@@ -36,13 +37,20 @@ export function FolderModal({ folder, open, onOpenChange }: FolderModalProps) {
 	}, [folder]);
 
 	async function handleSubmit() {
-		if (isEditing) {
-			await updateFolderAction(folder.id, name);
-		} else {
-			await createFolderAction(name);
+		try {
+			if (isEditing) {
+				await updateFolderAction(folder.id, name);
+				toast.success("Carpeta actualizada");
+			} else {
+				await createFolderAction(name);
+				toast.success("Carpeta creada");
+			}
+			setName("");
+			onOpenChange(false);
+		} catch (err) {
+			console.error("folder save failed", err);
+			toast.error(isEditing ? "No se pudo actualizar la carpeta" : "No se pudo crear la carpeta");
 		}
-		setName("");
-		onOpenChange(false);
 	}
 
 	return (

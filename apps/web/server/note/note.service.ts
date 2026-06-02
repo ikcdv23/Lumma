@@ -1,6 +1,6 @@
-import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@/generated/prisma/client";
 import * as noteRepository from "./note.repository";
+import * as folderRepository from "@/server/folder/folder.repository";
 
 /**
  * Lógica de negocio para Note. Las pages la llaman directamente para
@@ -37,12 +37,8 @@ export async function createNote(
 		content?: string;
 	},
 ) {
-	// TODO: cuando exista folderRepository, mover a folderRepository.belongsToUser
 	if (input.folderId) {
-		const folder = await prisma.folder.findUnique({
-			where: { id: input.folderId, userId },
-			select: { id: true },
-		});
+		const folder = await folderRepository.existsForUser(input.folderId, userId);
 		if (!folder) return null;
 	}
 
@@ -59,10 +55,7 @@ export async function createEmptyNoteForRedirect(
 	folderId: string | null,
 ) {
 	if (folderId) {
-		const folder = await prisma.folder.findUnique({
-			where: { id: folderId, userId },
-			select: { id: true },
-		});
+		const folder = await folderRepository.existsForUser(folderId, userId);
 		if (!folder) return null;
 	}
 
@@ -96,10 +89,7 @@ export async function moveNoteToFolder(
 ) {
 	// Validar que el folder destino pertenece al user
 	if (targetFolderId) {
-		const folder = await prisma.folder.findUnique({
-			where: { id: targetFolderId, userId },
-			select: { id: true },
-		});
+		const folder = await folderRepository.existsForUser(targetFolderId, userId);
 		if (!folder) return null;
 	}
 

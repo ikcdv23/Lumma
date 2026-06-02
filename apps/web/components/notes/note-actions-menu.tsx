@@ -11,6 +11,7 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { toast } from "sonner";
 import { deleteNoteAction } from "@/server/note/note.actions";
 import { MoveToFolderDialog } from "./move-to-folder-dialog";
 import { useConfirm } from "@/components/confirm/confirm-provider";
@@ -46,8 +47,14 @@ export function NoteActionsMenu({
 		if (!ok) return;
 
 		startDelete(async () => {
-			await deleteNoteAction(noteId);
-			if (redirectAfterDelete) router.push(redirectAfterDelete);
+			try {
+				await deleteNoteAction(noteId);
+				toast.success("Nota eliminada");
+				if (redirectAfterDelete) router.push(redirectAfterDelete);
+			} catch (err) {
+				console.error("deleteNoteAction failed", err);
+				toast.error("No se pudo eliminar la nota");
+			}
 		});
 	}
 

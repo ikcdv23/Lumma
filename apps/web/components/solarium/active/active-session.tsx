@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { LayoutGrid, ListTodo } from "lucide-react";
+import { ListTodo } from "lucide-react";
+import type { KanbanStatus } from "@/generated/prisma/client";
 import {
 	abandonSessionAction,
 	completeSessionAction,
@@ -15,6 +16,7 @@ import { FloatingTimer } from "./floating-timer";
 import { MaterialSidebar } from "./material-sidebar";
 import { ActiveNoteEditor } from "./active-note-editor";
 import { AbandonModal } from "./abandon-modal";
+import { KanbanBoard } from "./kanban-board";
 
 type FolderMaterial = {
 	id: string;
@@ -30,6 +32,14 @@ type LooseNote = {
 
 type Tab = "notas" | "tareas" | "tablero";
 
+type KanbanCardSeed = {
+	id: string;
+	title: string;
+	status: KanbanStatus;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
 type Props = {
 	sessionId: string;
 	title: string;
@@ -37,6 +47,7 @@ type Props = {
 	initialRemainingSeconds: number;
 	folders: FolderMaterial[];
 	looseNotes: LooseNote[];
+	kanbanCards: KanbanCardSeed[];
 };
 
 const HEARTBEAT_INTERVAL_MS = 45_000;
@@ -48,6 +59,7 @@ export function ActiveSession({
 	initialRemainingSeconds,
 	folders,
 	looseNotes,
+	kanbanCards,
 }: Props) {
 	const router = useRouter();
 	const [isAbandoning, startAbandonTransition] = useTransition();
@@ -182,7 +194,7 @@ export function ActiveSession({
 				)}
 				{activeTab === "tareas" && <ComingSoon icon={ListTodo} title="Tareas" />}
 				{activeTab === "tablero" && (
-					<ComingSoon icon={LayoutGrid} title="Tablero" />
+					<KanbanBoard sessionId={sessionId} initialCards={kanbanCards} />
 				)}
 			</main>
 
@@ -202,6 +214,22 @@ export function ActiveSession({
 				onCancel={cancelExit}
 				onConfirm={confirmExit}
 			/>
+
+			{/* Dev-only: salta al estado completado sin esperar al timer. El bloque
+			    entero es eliminado por el compilador en producción porque
+			    NODE_ENV se sustituye en build time y el `if` queda en `false`. */}
+			{process.env.NODE_ENV === "development" && !isCompleted && (
+				<div className="fixed bottom-4 right-4 z-50 flex items-center gap-2 rounded-full border border-amber-300/40 bg-amber-50/90 px-3 py-2 text-xs font-mono shadow-sm backdrop-blur">
+					<span className="text-amber-700">🐛 dev</span>
+					<button
+						type="button"
+						onClick={() => setRemainingSeconds(0)}
+						className="rounded-md bg-amber-500 px-2 py-1 text-white transition-colors hover:bg-amber-600"
+					>
+						Saltar al final
+					</button>
+				</div>
+			)}
 		</div>
 	);
 }

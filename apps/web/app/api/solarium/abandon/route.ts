@@ -1,13 +1,16 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { getAuthedUserId } from "@/lib/auth-helper";
 import * as solariumService from "@/server/solarium/solarium.service";
 
 // Endpoint mínimo para navigator.sendBeacon() en beforeunload.
 // Server actions no se pueden invocar con sendBeacon, así que hace falta una
 // API route POST que cumpla el mismo contrato.
+//
+// Los minutos vienen del cliente pero el service los clampa contra el tiempo
+// real transcurrido — no confiamos en el valor.
 export async function POST(req: Request) {
-	const session = await auth();
-	if (!session?.user?.id) {
+	const userId = await getAuthedUserId();
+	if (!userId) {
 		return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 	}
 
@@ -17,7 +20,7 @@ export async function POST(req: Request) {
 	}
 
 	await solariumService.abandonSession(
-		session.user.id,
+		userId,
 		body.sessionId,
 		body.studyMinutes,
 		0,
