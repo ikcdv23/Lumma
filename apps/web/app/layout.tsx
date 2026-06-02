@@ -1,7 +1,7 @@
-import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import { Geist, Figtree } from "next/font/google";
+import { Toaster } from "sonner";
 import { cn } from "@/lib/utils";
 import { ConfirmProvider } from "@/components/confirm/confirm-provider";
 
@@ -31,9 +31,20 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={cn("font-sans", geist.variable, figtreeHeading.variable)}>
+    <html lang="es" className={cn("font-sans", geist.variable, figtreeHeading.variable)}>
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
         <ConfirmProvider>{children}</ConfirmProvider>
+        <Toaster
+          position="bottom-right"
+          theme="dark"
+          richColors
+          closeButton
+          toastOptions={{
+            style: {
+              fontFamily: "var(--font-sans)",
+            },
+          }}
+        />
       </body>
     </html>
   );

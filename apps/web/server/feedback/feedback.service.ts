@@ -27,12 +27,10 @@ export function deleteOwnPost(authorId: string, postId: string) {
 /**
  * Toggle del voto: si el user ya votó este post, lo retira; si no, lo añade.
  * Idempotente desde el punto de vista de la UI ("voto on/off").
+ *
+ * Delega al repo el upsert atómico para que dos clics simultáneos no
+ * dupliquen ni rompan el unique constraint.
  */
-export async function toggleVote(userId: string, postId: string) {
-	const existing = await feedbackRepository.findVote(userId, postId);
-	if (existing) {
-		await feedbackRepository.removeVote(userId, postId);
-	} else {
-		await feedbackRepository.createVote(userId, postId);
-	}
+export function toggleVote(userId: string, postId: string) {
+	return feedbackRepository.toggleVoteAtomic(userId, postId);
 }

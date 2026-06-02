@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { LayoutGrid, ListTodo } from "lucide-react";
+import { ListTodo } from "lucide-react";
+import type { KanbanStatus } from "@/generated/prisma/client";
 import {
 	abandonSessionAction,
 	completeSessionAction,
@@ -15,6 +16,8 @@ import { FloatingTimer } from "./floating-timer";
 import { MaterialSidebar } from "./material-sidebar";
 import { ActiveNoteEditor } from "./active-note-editor";
 import { AbandonModal } from "./abandon-modal";
+import { CompletionModal } from "./completion-modal";
+import { KanbanBoard } from "./kanban-board";
 
 type FolderMaterial = {
 	id: string;
@@ -30,6 +33,14 @@ type LooseNote = {
 
 type Tab = "notas" | "tareas" | "tablero";
 
+type KanbanCardSeed = {
+	id: string;
+	title: string;
+	status: KanbanStatus;
+	createdAt: Date;
+	updatedAt: Date;
+};
+
 type Props = {
 	sessionId: string;
 	title: string;
@@ -37,6 +48,7 @@ type Props = {
 	initialRemainingSeconds: number;
 	folders: FolderMaterial[];
 	looseNotes: LooseNote[];
+	kanbanCards: KanbanCardSeed[];
 };
 
 const HEARTBEAT_INTERVAL_MS = 45_000;
@@ -48,6 +60,7 @@ export function ActiveSession({
 	initialRemainingSeconds,
 	folders,
 	looseNotes,
+	kanbanCards,
 }: Props) {
 	const router = useRouter();
 	const [isAbandoning, startAbandonTransition] = useTransition();
@@ -73,8 +86,27 @@ export function ActiveSession({
 	const [isCompleted, setIsCompleted] = useState(
 		initialRemainingSeconds === 0,
 	);
+	const [completionModalOpen, setCompletionModalOpen] = useState(false);
 
 	const completionFiredRef = useRef(false);
+
+	// Abre el modal de fin la primera vez que isCompleted pasa a true. Si el
+	// user lo cierra con "Quedarme un poco más" no vuelve a aparecer solo —
+	// puede seguir trabajando en /active aunque la sesión está cerrada en BD.
+	const completionModalShownRef = useRef(false);
+	useEffect(() => {
+		if (isCompleted && !completionModalShownRef.current) {
+			completionModalShownRef.current = true;
+			setCompletionModalOpen(true);
+		}
+	}, [isCompleted]);
+
+	// Conteo de tareas hechas/total para el resumen. El kanban tiene su propio
+	// state local en KanbanBoard, así que aquí mostramos el snapshot inicial
+	// (fiable si el user no ha tocado el tablero en esta vista de active).
+	// Para una versión más fiable habría que subir el state del kanban — out
+	// of scope ahora.
+	const kanbanDoneCount = kanbanCards.filter((c) => c.status === "DONE").length;
 
 	useEffect(() => {
 		if (isCompleted) return;
@@ -182,7 +214,7 @@ export function ActiveSession({
 				)}
 				{activeTab === "tareas" && <ComingSoon icon={ListTodo} title="Tareas" />}
 				{activeTab === "tablero" && (
-					<ComingSoon icon={LayoutGrid} title="Tablero" />
+					<KanbanBoard sessionId={sessionId} initialCards={kanbanCards} />
 				)}
 			</main>
 
@@ -201,6 +233,19 @@ export function ActiveSession({
 				elapsedMinutes={elapsedMinutes}
 				onCancel={cancelExit}
 				onConfirm={confirmExit}
+			/>
+
+			<CompletionModal
+				open={completionModalOpen}
+				onOpenChange={setCompletionModalOpen}
+				targetMinutes={targetMinutes}
+				elapsedMinutes={elapsedMinutes || targetMinutes}
+				foldersCount={folders.length}
+				notesCount={allNotes.length}
+				kanbanDone={kanbanDoneCount}
+				kanbanTotal={kanbanCards.length}
+				onExit={handleExit}
+				onStayLonger={() => setCompletionModalOpen(false)}
 			/>
 		</div>
 	);

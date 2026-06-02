@@ -7,6 +7,13 @@ export function findActiveByUser(userId: string) {
 	});
 }
 
+export function findActiveByIdForUser(sessionId: string, userId: string) {
+	return prisma.studySession.findFirst({
+		where: { id: sessionId, userId, status: "ACTIVE" },
+		select: { id: true, startedAt: true, targetMinutes: true },
+	});
+}
+
 export function findRecentByUser(userId: string, limit: number = 10) {
 	return prisma.studySession.findMany({
 		where: { userId, status: { not: "ACTIVE" } },
@@ -76,9 +83,9 @@ export function markStatus(
 	});
 }
 
-export function forceMarkAbandoned(sessionId: string, endedAt: Date) {
-	return prisma.studySession.update({
-		where: { id: sessionId },
+export function forceMarkAbandoned(sessionId: string, userId: string, endedAt: Date) {
+	return prisma.studySession.updateMany({
+		where: { id: sessionId, userId },
 		data: { status: "ABANDONED", endedAt },
 	});
 }

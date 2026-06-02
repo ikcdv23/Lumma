@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getAuthedUserId } from "@/lib/auth-helper";
+import { findTemplateById } from "@/lib/note-templates";
 import * as noteService from "./note.service";
 
 /**
@@ -90,4 +91,22 @@ export async function createNoteAndRedirectAction(folderId: string | null) {
 
 	revalidatePath(folderId ? `/folders/${folderId}` : "/home");
 	redirect(`/notes/${note.id}`);
+}
+
+/**
+ * Aplica una plantilla a una nota existente. Sustituye el `content` con
+ * los bloques de la plantilla. Se llama desde el selector que aparece en
+ * notas vacías. Devuelve `{ ok: true }` para que el cliente sepa que puede
+ * recargar (router.refresh()).
+ */
+export async function applyTemplateAction(noteId: string, templateId: string) {
+	const userId = await getAuthedUserId();
+	if (!userId) return { ok: false as const };
+
+	const template = findTemplateById(templateId);
+	if (!template) return { ok: false as const };
+
+	await noteService.updateNote(userId, noteId, { content: template.blocks });
+	revalidatePath(`/notes/${noteId}`);
+	return { ok: true as const };
 }

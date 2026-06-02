@@ -14,7 +14,7 @@ import { cookies } from "next/headers";
 import { NotesSearch } from "@/components/notes/notes-search";
 import { SidebarMobileAutoClose } from "@/components/sidebar-mobile-auto-close";
 import { SidebarUserMenu } from "@/components/sidebar-user-menu";
-import { prisma } from "@/lib/prisma";
+import * as userService from "@/server/user/user.service";
 import {
 	Sidebar,
 	SidebarContent,
@@ -51,10 +51,7 @@ export default async function WorkspaceLayout({
 
 	// Leer datos frescos de la BD (el JWT no se actualiza al cambiar perfil)
 	const dbUser = session?.user?.id
-		? await prisma.user.findUnique({
-			where: { id: session.user.id },
-			select: { name: true, image: true, email: true },
-		})
+		? await userService.getDisplayInfo(session.user.id)
 		: null;
 	const displayName = dbUser?.name ?? session?.user?.name ?? "Usuario";
 	const email = dbUser?.email ?? session?.user?.email ?? "";

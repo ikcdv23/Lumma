@@ -80,26 +80,28 @@ export function NoteEditor({
 		const dom = editor.domElement;
 		if (!dom) return;
 
+		// Paste handler: SOLO interceptamos cuando el portapapeles trae únicamente
+		// markdown en plano (sin HTML). Si hay HTML, dejamos que BlockNote/ProseMirror
+		// lo procese nativamente — antes intentábamos pasarlo por
+		// `tryParseHTMLToBlocks` y resultaba en pegado duplicado porque
+		// `preventDefault()` después de un `await` ya no puede impedir el paste
+		// nativo de ProseMirror, así que el contenido entraba dos veces (una
+		// formateada por nosotros y otra plana por el editor).
 		const handlePaste = async (e: ClipboardEvent) => {
 			const html = e.clipboardData?.getData("text/html");
+			if (html && html.trim().length > 0) return;
+
 			const text = e.clipboardData?.getData("text/plain");
+			if (!text) return;
 
-			const hasHtml = !!(html && html.trim().length > 0);
-			const looksLikeMarkdown = text
-				? /(^#{1,6}\s)|(\n\n)|(```)|(\*\*)|(^\s*[-*]\s)|(^\s*\d+\.\s)|(\|.*\|)/m.test(
-						text,
-					)
-				: false;
+			const looksLikeMarkdown =
+				/(^#{1,6}\s)|(\n\n)|(```)|(\*\*)|(^\s*[-*]\s)|(^\s*\d+\.\s)|(\|.*\|)/m.test(
+					text,
+				);
+			if (!looksLikeMarkdown) return;
 
-			// Decisión síncrona: si vamos a tomar control, preventDefault YA,
-			// antes de cualquier await. Si no, dejamos que BlockNote pegue nativo.
-			if (!hasHtml && !looksLikeMarkdown) return;
 			e.preventDefault();
-
-			const blocks: PartialBlock[] = hasHtml
-				? await editor.tryParseHTMLToBlocks(html!)
-				: await editor.tryParseMarkdownToBlocks(text!);
-
+			const blocks: PartialBlock[] = await editor.tryParseMarkdownToBlocks(text);
 			if (!blocks || blocks.length === 0) return;
 
 			const current = editor.getTextCursorPosition().block;

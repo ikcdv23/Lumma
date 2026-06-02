@@ -44,7 +44,7 @@ export function RegisterForm() {
 				/>
 			</div>
 			<div className="space-y-2">
-				<Label htmlFor="password">Contrasena</Label>
+				<Label htmlFor="password">Contraseña</Label>
 				<Input
 					id="password"
 					name="password"
@@ -55,7 +55,7 @@ export function RegisterForm() {
 				/>
 			</div>
 			<div className="space-y-2">
-				<Label htmlFor="confirmPassword">Confirmar contrasena</Label>
+				<Label htmlFor="confirmPassword">Confirmar contraseña</Label>
 				<Input
 					id="confirmPassword"
 					name="confirmPassword"

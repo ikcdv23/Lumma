@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useFormStatus } from "react-dom";
 import { Loader2, Send } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { StarRating } from "./star-rating";
 import { createFeedbackPostAction } from "@/server/feedback/feedback.actions";
@@ -27,9 +28,21 @@ export function FeedbackForm() {
 
 	async function handleSubmit() {
 		if (!content.trim() || rating === 0) return;
-		await createFeedbackPostAction(content.trim(), rating);
-		setContent("");
-		setRating(0);
+		try {
+			const created = await createFeedbackPostAction(content.trim(), rating);
+			if (!created) {
+				toast.error("No se pudo publicar el feedback");
+				return;
+			}
+			toast.success("Feedback publicado", {
+				description: "Gracias por compartir tu opinión.",
+			});
+			setContent("");
+			setRating(0);
+		} catch (err) {
+			console.error("createFeedbackPostAction failed", err);
+			toast.error("No se pudo publicar el feedback");
+		}
 	}
 
 	const isInvalid = content.trim() === "" || rating === 0;

@@ -11,12 +11,14 @@ export async function createSessionAction(input: {
 	targetMinutes: number;
 }) {
 	const userId = await getAuthedUserId();
-	if (!userId) return null;
+	if (!userId) return { ok: false as const, reason: "unauthorized" as const };
 
-	const created = await solariumService.createSession(userId, input);
+	const result = await solariumService.createSession(userId, input);
 
-	revalidatePath("/solarium");
-	return created;
+	if (result.ok && result.created) {
+		revalidatePath("/solarium");
+	}
+	return result;
 }
 
 export async function heartbeatAction(sessionId: string) {

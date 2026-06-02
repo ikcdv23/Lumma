@@ -150,6 +150,33 @@ model StudySession {
   notesTouched String[]
   notesCreated String[]
 
+  kanbanCards KanbanCard[]
+
   @@index([userId, startedAt])
   @@index([userId, status])
+}
+
+/// Tablero kanban ligado a UNA sesión de estudio. Empieza vacío al crear la
+/// sesión y se desecha conceptualmente al cerrarla — los cards quedan
+/// asociados a la sesión histórica para futura ficha técnica. 3 columnas
+/// fijas (PENDING / IN_PROGRESS / DONE) para no caer en parálisis.
+enum KanbanStatus {
+  PENDING
+  IN_PROGRESS
+  DONE
+}
+
+model KanbanCard {
+  id             String       @id @default(uuid())
+  studySessionId String
+  studySession   StudySession @relation(fields: [studySessionId], references: [id], onDelete: Cascade)
+
+  title  String
+  status KanbanStatus @default(PENDING)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([studySessionId, status])
+  @@index([studySessionId, createdAt])
 }

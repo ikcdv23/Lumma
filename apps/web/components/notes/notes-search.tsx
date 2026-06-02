@@ -85,7 +85,7 @@ export function NotesSearch() {
 							setResults([]);
 						}}
 						className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
-						aria-label="Limpiar busqueda"
+						aria-label="Limpiar búsqueda"
 					>
 						<X className="size-3.5" />
 					</button>
@@ -118,7 +118,7 @@ export function NotesSearch() {
 											<span className="truncate text-sm font-medium">
 												{note.title || (
 													<span className="italic text-muted-foreground">
-														Sin titulo
+														Sin título
 													</span>
 												)}
 											</span>

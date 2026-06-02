@@ -3,6 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Folder as FolderIcon, Inbox, Check, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import {
 	Dialog,
 	DialogContent,
@@ -46,10 +47,25 @@ export function MoveToFolderDialog({
 	function handlePick(targetFolderId: string | null) {
 		setPendingId(targetFolderId ?? "__inbox__");
 		startTransition(async () => {
-			await moveNoteToFolderAction(noteId, targetFolderId);
-			onMoved?.(targetFolderId);
-			setPendingId(null);
-			onOpenChange(false);
+			try {
+				const result = await moveNoteToFolderAction(noteId, targetFolderId);
+				if (!result) {
+					toast.error("No se pudo mover la nota", {
+						description: "La carpeta de destino ya no existe.",
+					});
+					return;
+				}
+				toast.success(
+					targetFolderId === null ? "Movida a Inbox" : "Nota movida",
+				);
+				onMoved?.(targetFolderId);
+			} catch (err) {
+				console.error("moveNoteToFolderAction failed", err);
+				toast.error("No se pudo mover la nota");
+			} finally {
+				setPendingId(null);
+				onOpenChange(false);
+			}
 		});
 	}
 

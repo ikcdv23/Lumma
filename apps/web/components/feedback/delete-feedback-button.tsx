@@ -2,6 +2,7 @@
 
 import { useTransition } from "react";
 import { Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { useConfirm } from "@/components/confirm/confirm-provider";
 import { deleteFeedbackPostAction } from "@/server/feedback/feedback.actions";
 
@@ -20,7 +21,13 @@ export function DeleteFeedbackButton({ postId }: { postId: string }) {
 		if (!ok) return;
 
 		startTransition(async () => {
-			await deleteFeedbackPostAction(postId);
+			try {
+				await deleteFeedbackPostAction(postId);
+				toast.success("Post eliminado");
+			} catch (err) {
+				console.error("deleteFeedbackPostAction failed", err);
+				toast.error("No se pudo eliminar el post");
+			}
 		});
 	}
 
