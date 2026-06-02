@@ -3,10 +3,10 @@
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ListTodo } from "lucide-react";
+import { toast } from "sonner";
 import type { KanbanStatus } from "@/generated/prisma/client";
 import {
 	abandonSessionAction,
-	completeSessionAction,
 	heartbeatAction,
 } from "@/server/solarium/solarium.actions";
 import { useNavigationGuard } from "@/hooks/use-navigation-guard";
@@ -139,8 +139,28 @@ export function ActiveSession({
 		if (completionFiredRef.current) return;
 		completionFiredRef.current = true;
 
-		completeSessionAction(sessionId, targetMinutes, 0).then(() => {
-			setIsCompleted(true);
+		// Abrimos el modal inmediatamente y disparamos el save en paralelo.
+		// Usamos fetch a una API route (no Server Action) porque los Server
+		// Actions re-renderizan la page actual, lo que hace que /active
+		// detecte "ya no hay sesión activa" y redirija a /solarium ANTES
+		// de que el user vea el modal de cierre.
+		setIsCompleted(true);
+		setCompletionModalOpen(true);
+		completionModalShownRef.current = true;
+
+		fetch("/api/solarium/complete", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({
+				sessionId,
+				studyMinutes: targetMinutes,
+				breakMinutes: 0,
+			}),
+		}).catch((err) => {
+			console.error("complete session failed", err);
+			toast.error("No se pudo guardar el cierre de la sesión", {
+				description: "Vuelve a intentarlo desde el botón Salir.",
+			});
 		});
 	}, [remainingSeconds, sessionId, targetMinutes]);
 

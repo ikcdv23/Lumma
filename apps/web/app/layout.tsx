@@ -36,12 +36,19 @@ export default function RootLayout({
         <ConfirmProvider>{children}</ConfirmProvider>
         <Toaster
           position="bottom-right"
-          theme="dark"
-          richColors
-          closeButton
+          duration={2500}
           toastOptions={{
             style: {
               fontFamily: "var(--font-sans)",
+              fontSize: "13px",
+              background: "var(--card)",
+              color: "var(--foreground)",
+              border: "1px solid var(--border)",
+              padding: "10px 14px",
+            },
+            classNames: {
+              title: "font-medium",
+              description: "text-xs opacity-70",
             },
           }}
         />
