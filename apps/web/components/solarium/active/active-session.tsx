@@ -16,6 +16,7 @@ import { FloatingTimer } from "./floating-timer";
 import { MaterialSidebar } from "./material-sidebar";
 import { ActiveNoteEditor } from "./active-note-editor";
 import { AbandonModal } from "./abandon-modal";
+import { CompletionModal } from "./completion-modal";
 import { KanbanBoard } from "./kanban-board";
 
 type FolderMaterial = {
@@ -85,8 +86,27 @@ export function ActiveSession({
 	const [isCompleted, setIsCompleted] = useState(
 		initialRemainingSeconds === 0,
 	);
+	const [completionModalOpen, setCompletionModalOpen] = useState(false);
 
 	const completionFiredRef = useRef(false);
+
+	// Abre el modal de fin la primera vez que isCompleted pasa a true. Si el
+	// user lo cierra con "Quedarme un poco más" no vuelve a aparecer solo —
+	// puede seguir trabajando en /active aunque la sesión está cerrada en BD.
+	const completionModalShownRef = useRef(false);
+	useEffect(() => {
+		if (isCompleted && !completionModalShownRef.current) {
+			completionModalShownRef.current = true;
+			setCompletionModalOpen(true);
+		}
+	}, [isCompleted]);
+
+	// Conteo de tareas hechas/total para el resumen. El kanban tiene su propio
+	// state local en KanbanBoard, así que aquí mostramos el snapshot inicial
+	// (fiable si el user no ha tocado el tablero en esta vista de active).
+	// Para una versión más fiable habría que subir el state del kanban — out
+	// of scope ahora.
+	const kanbanDoneCount = kanbanCards.filter((c) => c.status === "DONE").length;
 
 	useEffect(() => {
 		if (isCompleted) return;
@@ -215,21 +235,18 @@ export function ActiveSession({
 				onConfirm={confirmExit}
 			/>
 
-			{/* Dev-only: salta al estado completado sin esperar al timer. El bloque
-			    entero es eliminado por el compilador en producción porque
-			    NODE_ENV se sustituye en build time y el `if` queda en `false`. */}
-			{process.env.NODE_ENV === "development" && !isCompleted && (
-				<div className="fixed bottom-4 right-4 z-50 flex items-center gap-2 rounded-full border border-amber-300/40 bg-amber-50/90 px-3 py-2 text-xs font-mono shadow-sm backdrop-blur">
-					<span className="text-amber-700">🐛 dev</span>
-					<button
-						type="button"
-						onClick={() => setRemainingSeconds(0)}
-						className="rounded-md bg-amber-500 px-2 py-1 text-white transition-colors hover:bg-amber-600"
-					>
-						Saltar al final
-					</button>
-				</div>
-			)}
+			<CompletionModal
+				open={completionModalOpen}
+				onOpenChange={setCompletionModalOpen}
+				targetMinutes={targetMinutes}
+				elapsedMinutes={elapsedMinutes || targetMinutes}
+				foldersCount={folders.length}
+				notesCount={allNotes.length}
+				kanbanDone={kanbanDoneCount}
+				kanbanTotal={kanbanCards.length}
+				onExit={handleExit}
+				onStayLonger={() => setCompletionModalOpen(false)}
+			/>
 		</div>
 	);
 }
