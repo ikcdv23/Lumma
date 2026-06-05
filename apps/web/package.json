@@ -4,6 +4,7 @@
   "type": "module",
   "private": true,
   "scripts": {
+    "predev": "fuser -k 3000/tcp 2>/dev/null || true",
     "dev": "next dev --port 3000",
     "build": "prisma generate && next build",
     "start": "next start",
