@@ -11,7 +11,6 @@ const AUTH_COOKIES = [
 	"__Secure-authjs.callback-url",
 ];
 
-// @ts-ignore - NextAuth v5 middleware type inference issue
 export default auth((req) => {
 	try {
 		logRequest(req);

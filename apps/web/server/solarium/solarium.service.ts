@@ -1,6 +1,7 @@
 import * as solariumRepository from "./solarium.repository";
 import * as folderRepository from "@/server/folder/folder.repository";
 import * as noteRepository from "@/server/note/note.repository";
+import type { CreateSessionInput } from "@/schemas/solarium.schema";
 
 const STALE_HEARTBEAT_MS = 2 * 60 * 1000;
 
@@ -104,12 +105,7 @@ export type CreateSessionResult =
 
 export async function createSession(
 	userId: string,
-	input: {
-		title: string | null;
-		folderIds: string[];
-		noteIds: string[];
-		targetMinutes: number;
-	},
+	input: CreateSessionInput,
 ): Promise<CreateSessionResult> {
 	// Si ya hay una activa, NO la pisamos silenciosamente con la config nueva.
 	// Devolvemos `created: false` para que el cliente sepa que va a `/active`

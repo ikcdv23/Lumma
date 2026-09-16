@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { getAuthedUserId } from "@/lib/auth-helper";
+import { createSessionSchema } from "@/schemas/solarium.schema";
 import * as solariumService from "./solarium.service";
 
 export async function createSessionAction(input: {
@@ -13,7 +14,12 @@ export async function createSessionAction(input: {
 	const userId = await getAuthedUserId();
 	if (!userId) return { ok: false as const, reason: "unauthorized" as const };
 
-	const result = await solariumService.createSession(userId, input);
+	const parsed = createSessionSchema.safeParse(input);
+	if (!parsed.success) {
+		return { ok: false as const, reason: "invalid-input" as const };
+	}
+
+	const result = await solariumService.createSession(userId, parsed.data);
 
 	if (result.ok && result.created) {
 		revalidatePath("/solarium");

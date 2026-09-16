@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAuthedUserId } from "@/lib/auth-helper";
+import { settleSessionSchema } from "@/schemas/solarium.schema";
 import * as solariumService from "@/server/solarium/solarium.service";
 
 // Endpoint mínimo para navigator.sendBeacon() en beforeunload.
@@ -15,15 +16,16 @@ export async function POST(req: Request) {
 	}
 
 	const body = await req.json().catch(() => null);
-	if (!body?.sessionId || typeof body.studyMinutes !== "number") {
+	const parsed = settleSessionSchema.safeParse(body);
+	if (!parsed.success) {
 		return NextResponse.json({ error: "bad request" }, { status: 400 });
 	}
 
 	await solariumService.abandonSession(
 		userId,
-		body.sessionId,
-		body.studyMinutes,
-		0,
+		parsed.data.sessionId,
+		parsed.data.studyMinutes,
+		parsed.data.breakMinutes,
 	);
 
 	return NextResponse.json({ ok: true });

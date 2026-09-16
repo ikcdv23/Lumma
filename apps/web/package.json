@@ -4,7 +4,7 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "predev": "fuser -k 3000/tcp 2>/dev/null || true",
+    "predev": "node scripts/free-port.mjs 3000",
     "dev": "next dev --port 3000",
     "build": "prisma generate && next build",
     "start": "next start",
@@ -13,7 +13,7 @@
     "postinstall": "prisma generate"
   },
   "dependencies": {
-    "@auth/prisma-adapter": "^2.11.1",
+    "@auth/prisma-adapter": "^2.11.3",
     "@blocknote/core": "^0.49.0",
     "@blocknote/mantine": "^0.49.0",
     "@blocknote/react": "^0.49.0",
@@ -26,13 +26,12 @@
     "clsx": "^2.1.1",
     "lucide-react": "^1.8.0",
     "motion": "^12.38.0",
-    "next": "16.2.0",
-    "next-auth": "5.0.0-beta.30",
-    "postcss": "^8.5.9",
+    "next": "16.3.5",
+    "next-auth": "5.0.0-beta.32",
+    "postcss": "^8.5.18",
     "radix-ui": "^1.4.3",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "shadcn": "^4.2.0",
     "shiki": "^4.0.2",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.5.0",
@@ -50,6 +49,7 @@
     "dotenv": "^17.4.1",
     "eslint": "^9.39.1",
     "prisma": "^7.7.0",
+    "shadcn": "^4.2.0",
     "tsx": "^4.21.0",
     "typescript": "5.9.2"
   }

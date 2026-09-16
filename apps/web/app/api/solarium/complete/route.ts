@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAuthedUserId } from "@/lib/auth-helper";
+import { settleSessionSchema } from "@/schemas/solarium.schema";
 import * as solariumService from "@/server/solarium/solarium.service";
 
 /**
@@ -24,19 +25,16 @@ export async function POST(req: Request) {
 	}
 
 	const body = await req.json().catch(() => null);
-	if (
-		!body?.sessionId ||
-		typeof body.studyMinutes !== "number" ||
-		typeof body.breakMinutes !== "number"
-	) {
+	const parsed = settleSessionSchema.safeParse(body);
+	if (!parsed.success) {
 		return NextResponse.json({ error: "bad request" }, { status: 400 });
 	}
 
 	await solariumService.completeSession(
 		userId,
-		body.sessionId,
-		body.studyMinutes,
-		body.breakMinutes,
+		parsed.data.sessionId,
+		parsed.data.studyMinutes,
+		parsed.data.breakMinutes,
 	);
 
 	return NextResponse.json({ ok: true });

@@ -48,9 +48,9 @@ export function LoginForm() {
                 type="submit"
                 size="lg"
                 className="w-full"
-                disabled={!allFilled}
+                disabled={!allFilled || isPending}
             >
-                Iniciar sesion
+                {isPending ? "Iniciando..." : "Iniciar sesion"}
             </Button>
         </form>
     );
