@@ -3,6 +3,7 @@
 import { AuthError } from "next-auth";
 import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { signIn, signOut } from "@/auth";
+import { loginSchema } from "@/schemas/auth.schema";
 
 /**
  * Wrappers finos sobre NextAuth. No tocan BD — la auth es responsabilidad
@@ -18,17 +19,17 @@ export async function signOutAction() {
 }
 
 export async function loginAction(_prevState: unknown, formData: FormData) {
-	const email = formData.get("email") as string;
-	const password = formData.get("password") as string;
-
-	if (!email || !password) {
-		return { error: "Email y contraseña requeridos" };
+	const parsed = loginSchema.safeParse({
+		email: formData.get("email"),
+		password: formData.get("password"),
+	});
+	if (!parsed.success) {
+		return { error: parsed.error.issues[0]?.message ?? "Datos inválidos" };
 	}
 
 	try {
 		await signIn("credentials", {
-			email,
-			password,
+			...parsed.data,
 			redirectTo: "/home",
 		});
 	} catch (error) {

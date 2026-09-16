@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ListTodo } from "lucide-react";
 import { toast } from "sonner";
@@ -118,8 +118,9 @@ export function ActiveSession({
 
 	useEffect(() => {
 		if (isCompleted || isAbandoning) return;
+		void heartbeatAction(sessionId);
 		const id = setInterval(() => {
-			heartbeatAction(sessionId);
+			void heartbeatAction(sessionId);
 		}, HEARTBEAT_INTERVAL_MS);
 		return () => clearInterval(id);
 	}, [sessionId, isCompleted, isAbandoning]);
@@ -169,9 +170,22 @@ export function ActiveSession({
 		elapsedMinutesRef.current = elapsedMinutes;
 	}, [elapsedMinutes]);
 
+	const abandonOnUnload = useCallback(() => {
+		const body = JSON.stringify({
+			sessionId,
+			studyMinutes: elapsedMinutesRef.current,
+			breakMinutes: 0,
+		});
+		navigator.sendBeacon(
+			"/api/solarium/abandon",
+			new Blob([body], { type: "application/json" }),
+		);
+	}, [sessionId]);
+
 	const { pendingHref, isConfirming, confirmExit, cancelExit } =
 		useNavigationGuard({
 			when: !isCompleted && !isAbandoning,
+			onUnload: abandonOnUnload,
 			onConfirmExit: async () => {
 				await abandonSessionAction(
 					sessionId,

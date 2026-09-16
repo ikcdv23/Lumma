@@ -24,7 +24,6 @@ type NoteCardProps = {
 
 export function NoteCard({
 	idNote,
-	folderId,
 	title,
 	content,
 	updatedAt,

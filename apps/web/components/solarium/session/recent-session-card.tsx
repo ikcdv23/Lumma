@@ -1,6 +1,4 @@
-import Link from "next/link";
-import { redirect } from "next/navigation";
-import { Cloud, CloudSun, Sun, Zap } from "lucide-react";
+import { Cloud, CloudSun, Sun } from "lucide-react";
 
 
 export default function RecentSessionCard({

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Inbox, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -24,6 +24,18 @@ export default function FastNotes({ note, userName }: FastNotesProps) {
 	const [draftId, setDraftId] = useState<string | null>(null);
 	const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
 	const isDirtyRef = useRef(false);
+
+	const handleClose = useCallback(async () => {
+		const id = draftId;
+		const dirty = isDirtyRef.current;
+		setIsExpanded(false);
+		setDraftId(null);
+		setSaveStatus("idle");
+		isDirtyRef.current = false;
+		if (id && !dirty) {
+			await deleteNoteAction(id);
+		}
+	}, [draftId]);
 
 	// Al abrir el modal creamos una nota draft vacía en Inbox. EditableNote
 	// la edita por id real. Si el usuario cierra sin escribir, handleClose
@@ -62,19 +74,7 @@ export default function FastNotes({ note, userName }: FastNotesProps) {
 		}
 		window.addEventListener("keydown", onKey);
 		return () => window.removeEventListener("keydown", onKey);
-	}, [isExpanded]);
-
-	async function handleClose() {
-		const id = draftId;
-		const dirty = isDirtyRef.current;
-		setIsExpanded(false);
-		setDraftId(null);
-		setSaveStatus("idle");
-		isDirtyRef.current = false;
-		if (id && !dirty) {
-			await deleteNoteAction(id);
-		}
-	}
+	}, [isExpanded, handleClose]);
 
 	const previewText = note?.content ?? "";
 
